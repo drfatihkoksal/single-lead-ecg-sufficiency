@@ -42,6 +42,8 @@ artifacts_v2/aggregate/        per-cell results (cells.csv), sufficiency by clas
                                summary.json and seed-ensemble test-set predictions
 artifacts_v2/aggregate_broad/  the same for the broad label definition
 artifacts_v2/dedupe/exclusions.csv  records removed as duplicates or malformed
+artifacts_v2/<cohort>/cache/   labels (primary and broad), record identifiers, preparation report
+artifacts_v2/<cohort>/splits/  training/validation/test indices into the record identifiers
 ```
 
 ## Data
@@ -84,12 +86,12 @@ python -m src.figures_v2
 python -m src.supplement_v2
 ```
 
-The last three commands run directly from the aggregate results included in this repository,
-without the data or the training grid. On one RTX 5090 the full grid takes roughly half a day.
+The last three commands need neither the data nor the training grid: they run from the
+aggregate results, labels and splits included in this repository. On one RTX 5090 the full grid takes roughly half a day.
 
 ## Notes
 
-- Raw data, signal caches, model checkpoints and per-run predictions are not tracked.
+- Raw data, signal arrays, model checkpoints and per-run predictions are not tracked.
 - Splits are record-level and multilabel-stratified (70/15/15) for Chapman, Ningbo and Georgia,
   which do not distribute patient identifiers; PTB-XL uses its official patient-disjoint folds
   (1-8 train, 9 validation, 10 test).
