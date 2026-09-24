@@ -1,0 +1,75 @@
+{
+  "dataset": "ningbo",
+  "n_headers": 34905,
+  "n_kept": 34829,
+  "excluded": {
+    "duplicate of a Chapman record": 71,
+    "within-cohort duplicate (conflicting Dx)": 2,
+    "malformed header": 1,
+    "within-cohort duplicate (same Dx)": 2
+  },
+  "einthoven_rms_mV": 0.0004991887253709137,
+  "lead_II_rms_mV": 0.18403491377830505,
+  "split": {
+    "train": 24380,
+    "val": 5224,
+    "test": 5225
+  },
+  "positives": {
+    "AF": {
+      "all": 0,
+      "broad": 0,
+      "test": 0
+    },
+    "AFL": {
+      "all": 7600,
+      "broad": 7600,
+      "test": 1140
+    },
+    "TWC": {
+      "all": 5159,
+      "broad": 6588,
+      "test": 774
+    },
+    "LAD": {
+      "all": 1163,
+      "broad": 1163,
+      "test": 175
+    },
+    "SB": {
+      "all": 12659,
+      "broad": 12659,
+      "test": 1899
+    },
+    "SVT": {
+      "all": 130,
+      "broad": 287,
+      "test": 19
+    },
+    "SR": {
+      "all": 6282,
+      "broad": 6282,
+      "test": 942
+    },
+    "ST": {
+      "all": 5683,
+      "broad": 5683,
+      "test": 852
+    },
+    "STTC": {
+      "all": 4219,
+      "broad": 5115,
+      "test": 633
+    },
+    "LVH": {
+      "all": 4730,
+      "broad": 4730,
+      "test": 710
+    },
+    "RBBB": {
+      "all": 1287,
+      "broad": 1532,
+      "test": 193
+    }
+  }
+}

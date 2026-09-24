@@ -1,0 +1,72 @@
+{
+  "dataset": "georgia",
+  "n_headers": 10344,
+  "n_kept": 10292,
+  "excluded": {
+    "length != 10 s": 52
+  },
+  "einthoven_rms_mV": 0.0007219434482976794,
+  "lead_II_rms_mV": 0.17417621612548828,
+  "split": {
+    "train": 7204,
+    "val": 1544,
+    "test": 1544
+  },
+  "positives": {
+    "AF": {
+      "all": 568,
+      "broad": 568,
+      "test": 85
+    },
+    "AFL": {
+      "all": 186,
+      "broad": 186,
+      "test": 28
+    },
+    "TWC": {
+      "all": 2299,
+      "broad": 2738,
+      "test": 345
+    },
+    "LAD": {
+      "all": 938,
+      "broad": 938,
+      "test": 141
+    },
+    "SB": {
+      "all": 1668,
+      "broad": 1668,
+      "test": 250
+    },
+    "SVT": {
+      "all": 32,
+      "broad": 60,
+      "test": 5
+    },
+    "SR": {
+      "all": 1735,
+      "broad": 1735,
+      "test": 260
+    },
+    "ST": {
+      "all": 1261,
+      "broad": 1261,
+      "test": 189
+    },
+    "STTC": {
+      "all": 1880,
+      "broad": 3940,
+      "test": 282
+    },
+    "LVH": {
+      "all": 1225,
+      "broad": 1225,
+      "test": 184
+    },
+    "RBBB": {
+      "all": 554,
+      "broad": 894,
+      "test": 83
+    }
+  }
+}

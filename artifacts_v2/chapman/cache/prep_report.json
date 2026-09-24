@@ -1,0 +1,72 @@
+{
+  "dataset": "chapman",
+  "n_headers": 10247,
+  "n_kept": 10234,
+  "excluded": {
+    "within-cohort duplicate (same Dx)": 13
+  },
+  "einthoven_rms_mV": 0.0004990538582205772,
+  "lead_II_rms_mV": 0.1703551560640335,
+  "split": {
+    "train": 7164,
+    "val": 1535,
+    "test": 1535
+  },
+  "positives": {
+    "AF": {
+      "all": 1778,
+      "broad": 1778,
+      "test": 267
+    },
+    "AFL": {
+      "all": 445,
+      "broad": 445,
+      "test": 67
+    },
+    "TWC": {
+      "all": 1875,
+      "broad": 1963,
+      "test": 281
+    },
+    "LAD": {
+      "all": 381,
+      "broad": 381,
+      "test": 57
+    },
+    "SB": {
+      "all": 3888,
+      "broad": 3888,
+      "test": 583
+    },
+    "SVT": {
+      "all": 579,
+      "broad": 700,
+      "test": 87
+    },
+    "SR": {
+      "all": 1826,
+      "broad": 1826,
+      "test": 274
+    },
+    "ST": {
+      "all": 1566,
+      "broad": 1566,
+      "test": 235
+    },
+    "STTC": {
+      "all": 1158,
+      "broad": 1375,
+      "test": 174
+    },
+    "LVH": {
+      "all": 1308,
+      "broad": 1308,
+      "test": 196
+    },
+    "RBBB": {
+      "all": 453,
+      "broad": 453,
+      "test": 68
+    }
+  }
+}
