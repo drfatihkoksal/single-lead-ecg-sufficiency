@@ -1,0 +1,13 @@
+arch,cohort_a,cohort_b,classes,n,r,kappa,ac1,agree,kappa_blind015
+seresnet,chapman_broad,georgia_broad,all,132,0.757,0.494,0.587,0.773,0.552
+seresnet,chapman_broad,georgia_broad,morphology,60,0.723,0.200,0.886,0.900,0.428
+seresnet,chapman_broad,ptbxl_snomed_broad,all,132,0.750,0.690,0.757,0.864,0.663
+seresnet,chapman_broad,ptbxl_snomed_broad,morphology,60,0.646,0.487,0.964,0.967,0.520
+seresnet,chapman_broad,ningbo_broad,all,108,0.976,0.901,0.913,0.954,0.919
+seresnet,chapman_broad,ningbo_broad,morphology,60,0.978,0.545,0.944,0.950,0.893
+seresnet,georgia_broad,ptbxl_snomed_broad,all,132,0.747,0.407,0.545,0.742,0.624
+seresnet,georgia_broad,ptbxl_snomed_broad,morphology,60,0.697,-0.029,0.890,0.900,0.528
+seresnet,georgia_broad,ningbo_broad,all,108,0.725,0.508,0.596,0.778,0.560
+seresnet,georgia_broad,ningbo_broad,morphology,60,0.690,0.160,0.865,0.883,0.395
+seresnet,ptbxl_snomed_broad,ningbo_broad,all,108,0.742,0.813,0.851,0.917,0.701
+seresnet,ptbxl_snomed_broad,ningbo_broad,morphology,60,0.602,0.384,0.946,0.950,0.490

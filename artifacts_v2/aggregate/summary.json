@@ -1,0 +1,134 @@
+{
+  "chapman/seresnet": {
+    "seeds": [
+      1337,
+      1,
+      2,
+      3,
+      4
+    ],
+    "ceiling_macro_auprc": 0.8592737412577183,
+    "blind_single_cells": 44,
+    "blind_rhythm": 7,
+    "blind_morphology": 37,
+    "median_gap_seed_sd": 0.018570967586026634
+  },
+  "chapman/inceptiontime": {
+    "seeds": [
+      1337,
+      1,
+      2,
+      3,
+      4
+    ],
+    "ceiling_macro_auprc": 0.8397372768144156,
+    "blind_single_cells": 46,
+    "blind_rhythm": 7,
+    "blind_morphology": 39,
+    "median_gap_seed_sd": 0.01653997191095427
+  },
+  "chapman/gbm": {
+    "seeds": [
+      1337
+    ],
+    "ceiling_macro_auprc": 0.8277845416739393,
+    "blind_single_cells": 57,
+    "blind_rhythm": 12,
+    "blind_morphology": 45,
+    "median_gap_seed_sd": null
+  },
+  "ningbo/seresnet": {
+    "seeds": [
+      1337,
+      1,
+      2,
+      3,
+      4
+    ],
+    "ceiling_macro_auprc": 0.8248913226089152,
+    "blind_single_cells": 35,
+    "blind_rhythm": 1,
+    "blind_morphology": 34,
+    "median_gap_seed_sd": 0.0069896071999384825
+  },
+  "ningbo/inceptiontime": {
+    "seeds": [
+      1337,
+      1,
+      2,
+      3,
+      4
+    ],
+    "ceiling_macro_auprc": 0.7876474524874406,
+    "blind_single_cells": 36,
+    "blind_rhythm": 0,
+    "blind_morphology": 36,
+    "median_gap_seed_sd": 0.01003831984739056
+  },
+  "ptbxl_snomed/seresnet": {
+    "seeds": [
+      1337,
+      1,
+      2,
+      3,
+      4
+    ],
+    "ceiling_macro_auprc": 0.6776821059544714,
+    "blind_single_cells": 35,
+    "blind_rhythm": 1,
+    "blind_morphology": 34,
+    "median_gap_seed_sd": 0.02056934703078167
+  },
+  "ptbxl_snomed/inceptiontime": {
+    "seeds": [
+      1337,
+      1,
+      2,
+      3,
+      4
+    ],
+    "ceiling_macro_auprc": 0.6575494183077736,
+    "blind_single_cells": 37,
+    "blind_rhythm": 4,
+    "blind_morphology": 33,
+    "median_gap_seed_sd": 0.02317048574752029
+  },
+  "ptbxl_snomed/gbm": {
+    "seeds": [
+      1337
+    ],
+    "ceiling_macro_auprc": 0.6482242391442458,
+    "blind_single_cells": 50,
+    "blind_rhythm": 13,
+    "blind_morphology": 37,
+    "median_gap_seed_sd": null
+  },
+  "georgia/seresnet": {
+    "seeds": [
+      1337,
+      1,
+      2,
+      3,
+      4
+    ],
+    "ceiling_macro_auprc": 0.710341213174093,
+    "blind_single_cells": 42,
+    "blind_rhythm": 11,
+    "blind_morphology": 31,
+    "median_gap_seed_sd": 0.019890180602427456
+  },
+  "georgia/inceptiontime": {
+    "seeds": [
+      1337,
+      1,
+      2,
+      3,
+      4
+    ],
+    "ceiling_macro_auprc": 0.6696733763421087,
+    "blind_single_cells": 40,
+    "blind_rhythm": 10,
+    "blind_morphology": 30,
+    "median_gap_seed_sd": 0.026403829721879928
+  }
+}

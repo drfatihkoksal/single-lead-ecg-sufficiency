@@ -1,0 +1,9 @@
+cohort,arch,cells,any_fp,any_fp_null,excess_any,morph_fp,morph_fp_null,excess_morph,cells_above_null
+chapman,inceptiontime,52,0.482,0.390,0.091,0.395,0.352,0.043,14
+chapman,seresnet,52,0.474,0.364,0.110,0.386,0.335,0.051,15
+georgia,inceptiontime,53,0.636,0.542,0.094,0.601,0.506,0.094,22
+georgia,seresnet,48,0.602,0.512,0.090,0.573,0.484,0.090,17
+ningbo,inceptiontime,43,0.398,0.273,0.125,0.381,0.263,0.118,30
+ningbo,seresnet,42,0.402,0.270,0.132,0.386,0.260,0.126,33
+ptbxl_snomed,inceptiontime,44,0.453,0.405,0.048,0.425,0.374,0.051,13
+ptbxl_snomed,seresnet,38,0.426,0.414,0.012,0.411,0.390,0.021,4

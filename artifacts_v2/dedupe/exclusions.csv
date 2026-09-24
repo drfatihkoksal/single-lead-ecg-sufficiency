@@ -1,0 +1,90 @@
+rec,cohort,reason,dx_conflict
+JS23074,ningbo,malformed header,
+JS34368,ningbo,duplicate of a Chapman record,False
+JS45526,ningbo,duplicate of a Chapman record,True
+JS45517,ningbo,duplicate of a Chapman record,True
+JS45522,ningbo,duplicate of a Chapman record,True
+JS23830,ningbo,duplicate of a Chapman record,False
+JS32380,ningbo,duplicate of a Chapman record,False
+JS45523,ningbo,duplicate of a Chapman record,True
+JS10625,chapman,within-cohort duplicate (same Dx),False
+JS21746,ningbo,duplicate of a Chapman record,True
+JS05900,chapman,within-cohort duplicate (same Dx),False
+JS45513,ningbo,duplicate of a Chapman record,True
+JS45521,ningbo,duplicate of a Chapman record,True
+JS15897,ningbo,duplicate of a Chapman record,True
+JS28398,ningbo,duplicate of a Chapman record,False
+JS36176,ningbo,duplicate of a Chapman record,False
+JS43955,ningbo,duplicate of a Chapman record,False
+JS10617,chapman,within-cohort duplicate (same Dx),False
+JS33140,ningbo,within-cohort duplicate (same Dx),False
+JS16520,ningbo,duplicate of a Chapman record,True
+JS24972,ningbo,duplicate of a Chapman record,True
+JS37307,ningbo,duplicate of a Chapman record,False
+JS10624,chapman,within-cohort duplicate (same Dx),False
+JS45525,ningbo,duplicate of a Chapman record,True
+JS10614,chapman,within-cohort duplicate (same Dx),False
+JS40765,ningbo,duplicate of a Chapman record,False
+JS45354,ningbo,duplicate of a Chapman record,True
+JS36678,ningbo,duplicate of a Chapman record,False
+JS38503,ningbo,duplicate of a Chapman record,False
+JS45519,ningbo,duplicate of a Chapman record,True
+JS40737,ningbo,duplicate of a Chapman record,False
+JS36986,ningbo,duplicate of a Chapman record,False
+JS19114,ningbo,within-cohort duplicate (conflicting Dx),True
+JS19115,ningbo,within-cohort duplicate (conflicting Dx),True
+JS10086,chapman,within-cohort duplicate (same Dx),False
+JS45528,ningbo,duplicate of a Chapman record,True
+JS16720,ningbo,duplicate of a Chapman record,True
+JS45529,ningbo,duplicate of a Chapman record,True
+JS45514,ningbo,duplicate of a Chapman record,True
+JS18466,ningbo,duplicate of a Chapman record,True
+JS45366,ningbo,duplicate of a Chapman record,False
+JS45363,ningbo,duplicate of a Chapman record,True
+JS40627,ningbo,duplicate of a Chapman record,False
+JS10609,chapman,within-cohort duplicate (same Dx),False
+JS18476,ningbo,duplicate of a Chapman record,True
+JS40496,ningbo,duplicate of a Chapman record,False
+JS39808,ningbo,duplicate of a Chapman record,False
+JS45368,ningbo,duplicate of a Chapman record,False
+JS06490,chapman,within-cohort duplicate (same Dx),False
+JS03005,chapman,within-cohort duplicate (same Dx),False
+JS25323,ningbo,duplicate of a Chapman record,True
+JS36337,ningbo,duplicate of a Chapman record,False
+JS23065,ningbo,duplicate of a Chapman record,True
+JS16171,ningbo,duplicate of a Chapman record,True
+JS03435,chapman,within-cohort duplicate (same Dx),False
+JS21342,ningbo,duplicate of a Chapman record,True
+JS42482,ningbo,duplicate of a Chapman record,True
+JS08755,chapman,within-cohort duplicate (same Dx),False
+JS45516,ningbo,duplicate of a Chapman record,True
+JS45511,ningbo,duplicate of a Chapman record,True
+JS45510,ningbo,duplicate of a Chapman record,True
+JS45362,ningbo,duplicate of a Chapman record,True
+JS13501,ningbo,duplicate of a Chapman record,True
+JS33568,ningbo,duplicate of a Chapman record,False
+JS16240,ningbo,duplicate of a Chapman record,True
+JS37847,ningbo,duplicate of a Chapman record,False
+JS17689,ningbo,duplicate of a Chapman record,True
+JS17631,ningbo,duplicate of a Chapman record,True
+JS10612,chapman,within-cohort duplicate (same Dx),False
+JS40711,ningbo,duplicate of a Chapman record,False
+JS23812,ningbo,duplicate of a Chapman record,False
+JS40697,ningbo,duplicate of a Chapman record,False
+JS45524,ningbo,duplicate of a Chapman record,True
+JS19963,ningbo,duplicate of a Chapman record,False
+JS13601,ningbo,duplicate of a Chapman record,True
+JS15186,ningbo,duplicate of a Chapman record,True
+JS45520,ningbo,duplicate of a Chapman record,True
+JS45515,ningbo,duplicate of a Chapman record,True
+JS42011,ningbo,duplicate of a Chapman record,False
+JS27804,ningbo,duplicate of a Chapman record,False
+JS45462,ningbo,within-cohort duplicate (same Dx),False
+JS45527,ningbo,duplicate of a Chapman record,True
+JS23622,ningbo,duplicate of a Chapman record,True
+JS45365,ningbo,duplicate of a Chapman record,True
+JS10628,chapman,within-cohort duplicate (same Dx),False
+JS25178,ningbo,duplicate of a Chapman record,False
+JS40419,ningbo,duplicate of a Chapman record,False
+JS36594,ningbo,duplicate of a Chapman record,False
+JS45512,ningbo,duplicate of a Chapman record,True

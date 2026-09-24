@@ -1,0 +1,42 @@
+{
+  "chapman_broad/seresnet": {
+    "seeds": [
+      1337
+    ],
+    "ceiling_macro_auprc": 0.8586269388849535,
+    "blind_single_cells": 45,
+    "blind_rhythm": 7,
+    "blind_morphology": 38,
+    "median_gap_seed_sd": null
+  },
+  "georgia_broad/seresnet": {
+    "seeds": [
+      1337
+    ],
+    "ceiling_macro_auprc": 0.6783392035515438,
+    "blind_single_cells": 34,
+    "blind_rhythm": 3,
+    "blind_morphology": 31,
+    "median_gap_seed_sd": null
+  },
+  "ptbxl_snomed_broad/seresnet": {
+    "seeds": [
+      1337
+    ],
+    "ceiling_macro_auprc": 0.6995052309394035,
+    "blind_single_cells": 45,
+    "blind_rhythm": 4,
+    "blind_morphology": 41,
+    "median_gap_seed_sd": null
+  },
+  "ningbo_broad/seresnet": {
+    "seeds": [
+      1337
+    ],
+    "ceiling_macro_auprc": 0.8162435929141554,
+    "blind_single_cells": 38,
+    "blind_rhythm": 1,
+    "blind_morphology": 37,
+    "median_gap_seed_sd": null
+  }
+}
