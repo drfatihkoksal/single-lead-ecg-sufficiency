@@ -63,17 +63,17 @@ def table_s2():
     e = c[c.kind == "ceiling"]
     rows = []
     for cl in ORDER:
-        r = {"Class": cl}
         for ds in NAMES:
+            r = {"Class": cl, "Cohort": NAMES[ds]}
             for a in ARCH:
                 g = e[(e.cohort == ds) & (e.arch == a) & (e.cls == cl)]
                 if g.empty:
+                    r[ARCH[a]] = "–"
                     continue
                 v = g.iloc[0]
-                r[f"{NAMES[ds]} {ARCH[a]}"] = ("n/a" if np.isnan(v.auprc)
-                                                else f"{v.auprc:.2f} ({v.auroc:.2f})")
-        rows.append(r)
-    return _md(pd.DataFrame(rows).fillna(""))
+                r[ARCH[a]] = "n/a" if np.isnan(v.auprc) else f"{v.auprc:.2f} ({v.auroc:.2f})"
+            rows.append(r)
+    return _md(pd.DataFrame(rows))
 
 
 def table_s3():
@@ -188,7 +188,7 @@ def main():
         s1_text(),
         "## Table S1. Exclusions by cohort and reason", table_s1(),
         "## Table S2. Twelve-lead reference performance",
-        "AUPRC (AUROC) of the twelve-lead model for each class, cohort and model (seed ensembles for the deep learning models). n/a: class not available in the source.",
+        "AUPRC (AUROC) of the twelve-lead model for each class, cohort and model (seed ensembles for the deep learning models). n/a: class not available in the source; –: the feature-based model was trained in Chapman and PTB-XL only.",
         table_s2(),
         "## Table S3. Sensitivity of the sufficiency classification to the margin",
         "Number of sufficient single-lead cells (SE-ResNet and InceptionTime combined, all cohorts) under absolute margins on the AUPRC gap and relative margins on the gap divided by the twelve-lead AUPRC.",
@@ -201,9 +201,9 @@ def main():
         "Single-lead sufficiency under the primary and the broad label definitions (Table 2) for the classes whose definition differs (SE-ResNet).",
         table_s6(),
         "## Figures S1 and S2",
-        "**Figure S1.** Diagnostic sufficiency map for InceptionTime (as Figure 2).\n\n**Figure S2.** Diagnostic sufficiency map for the feature-based model in Chapman and PTB-XL (single leads only). In PTB-XL, supraventricular tachycardia (three positive test recordings, twelve-lead AUPRC 0.02) appears sufficient on many leads; this illustrates why classes with a twelve-lead AUPRC below 0.50 are flagged rather than interpreted.",
+        "![](../figures/v2/fig2_sufficiency_inceptiontime.png)\n\n**Figure S1.** Diagnostic sufficiency map for InceptionTime (as Figure 2).\n\n![](../figures/v2/fig2_sufficiency_gbm.png)\n\n**Figure S2.** Diagnostic sufficiency map for the feature-based model in Chapman and PTB-XL (single leads only). In PTB-XL, supraventricular tachycardia (three positive test recordings, twelve-lead AUPRC 0.02) appears sufficient on many leads; this illustrates why classes with a twelve-lead AUPRC below 0.50 are flagged rather than interpreted.",
         "## Supplementary Data 1",
-        "`cells.csv`: one row per cohort, model, lead configuration and class, with AUPRC, AUROC, twelve-lead AUPRC, gap, relative gap, bootstrap 95% confidence interval, seed standard deviation, q-value and the sufficiency classification under every margin.",
+        "Supplementary_Data_1.csv (comma-separated): one row per cohort, model, lead configuration and class, with the number of positive test recordings, AUPRC, AUROC, twelve-lead AUPRC, gap, relative gap, bootstrap 95% confidence interval, seed standard deviation, q-value and the sufficiency classification under every margin.",
         "## TRIPOD+AI checklist",
         "Items and numbering follow the TRIPOD+AI statement (Collins et al., BMJ 2024;385:e078378).",
         _md(pd.DataFrame(TRIPOD, columns=["Section", "Item", "Reported in"])),

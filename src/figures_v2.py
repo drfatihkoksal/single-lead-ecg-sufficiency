@@ -12,7 +12,7 @@ Fig. 3 uses categorical slots 1-4 plus a distinct marker shape per cohort.
 
 Run:  python -m src.figures_v2            -> figures/v2/*.pdf, *.png
       (default --arch all: Fig. 2 for SE-ResNet, and InceptionTime / feature-based
-      variants as Supplementary Figs S1 / S2, plus Fig. 3)
+      variants as Supplementary Figs S1 / S2, plus Fig. 3 and the graphical abstract)
 """
 import argparse
 
@@ -226,6 +226,53 @@ def fig1():
     _save(fig, "fig1_design")
 
 
+def graphical_abstract():
+    """Graphical abstract (13 x 5 cm): number of cohorts in which each single lead was sufficient
+    for each class (SE-ResNet), beside the study design in brief."""
+    cells = pd.read_csv(AGG / "cells.csv")
+    s = cells[(cells.arch == "seresnet") & (cells.kind == "single")]
+    rows = [("Rhythm", ["SR", "SB", "ST", "AF", "AFL"]), ("Axis", ["LAD"]), ("Conduction", ["RBBB"]),
+            ("Hypertrophy", ["LVH"]), ("Repolarization", ["TWC", "STTC"])]
+    order = [cl for _, cls in rows for cl in cls]
+    ok = s.assign(ok=s.sufficiency == "sufficient").pivot_table(index="cls", columns="spec", values="ok", aggfunc="sum")
+    avail = s[s.sufficiency != "na"].groupby("cls").cohort.nunique()
+    blues = ["#f0efec", "#cfe0f6", "#94bdee", "#5596e3", "#2a78d6"]
+
+    fig = plt.figure(figsize=(13 / 2.54 * 1.6, 5 / 2.54 * 1.6))
+    fig.text(0.02, 0.86, "Is one ECG lead enough?", fontsize=12, fontweight="bold", color=INK)
+    lines = ["4 cohorts, 77 192 ECGs", "each lead vs the 12-lead ECG, 11 diagnoses",
+             "2 CNNs (5 seeds) + feature-based model", "",
+             "Sufficient: 95% CI of the AUPRC loss", "entirely below 0.05"]
+    for i, t in enumerate(lines):
+        fig.text(0.02, 0.72 - i * 0.075, t, fontsize=8, color=INK2)
+    fig.text(0.02, 0.12, "Rate rhythms: any lead.  AF: II/aVF > I.\nOther diagnoses: the closest lead\nfollows lead-vector physiology.",
+             fontsize=8, color=INK, linespacing=1.4)
+
+    ax = fig.add_axes([0.43, 0.14, 0.44, 0.74])
+    for r, cl in enumerate(order):
+        for j, ld in enumerate(C.LEADS):
+            n, N = int(ok.loc[cl, ld]), int(avail[cl])
+            ax.add_patch(Rectangle((j, r), 0.94, 0.9, facecolor=blues[round(4 * n / N)], edgecolor="none"))
+            if n:
+                ax.text(j + 0.47, r + 0.45, str(n), ha="center", va="center", fontsize=6,
+                        color="white" if n / N > 0.5 else INK)
+    ax.set_xlim(0, 12); ax.set_ylim(len(order), 0)
+    ax.set_xticks(np.arange(12) + 0.47, C.LEADS, fontsize=6.5)
+    ax.xaxis.tick_top(); ax.tick_params(length=0)
+    ax.set_yticks(np.arange(len(order)) + 0.45, order, fontsize=6.5)
+    for sp in ax.spines.values():
+        sp.set_visible(False)
+    r0 = 0
+    for g, cls in rows:
+        ax.text(12.3, r0 + len(cls) / 2, g, va="center", fontsize=6.5, color=INK2)
+        r0 += len(cls)
+        if r0 < len(order):
+            ax.axhline(r0 - 0.05, color="white", lw=2)
+    ax.text(0, len(order) + 0.9, "Number of cohorts in which the single lead was sufficient (of 4; AF and AFL of 3)",
+            fontsize=6, color=INK2, va="top")
+    _save(fig, "graphical_abstract")
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--arch", default="all", help="seresnet | inceptiontime | gbm | all")
@@ -235,6 +282,7 @@ if __name__ == "__main__":
         for arch in ("seresnet", "inceptiontime", "gbm"):
             fig2(arch)
         fig3()
+        graphical_abstract()
     else:
         fig2(a.arch)
         if a.arch == "seresnet":
