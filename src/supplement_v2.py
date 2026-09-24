@@ -2,6 +2,7 @@
 artifacts_v2/aggregate*/ so that every number is traceable.
 
   S1  data provenance and harmonization notes
+  S2  models, training and analysis details moved from the main text
   Table S1  exclusions by cohort and reason
   Table S2  twelve-lead reference performance per class (AUPRC, AUROC)
   Table S3  sensitivity of the sufficiency classification to the margin
@@ -40,6 +41,26 @@ def s1_text():
 *ST-T change.* Nonspecific ST-T change is coded as 428750005 in Chapman and Georgia and as 55930002 ("ST changes") in Ningbo and in the 2021 release of PTB-XL, where it corresponds to the PTB-XL statement for non-specific ST changes. Both codes were included.
 
 *PTB-XL.* Record identifiers of the 2021 Challenge release (HRnnnnn) equal the PTB-XL ecg_id, and the signals are identical to PTB-XL version 1.0.1 (maximum absolute difference 0 mV in 32 randomly checked recordings), which allowed the official patient-disjoint folds to be used with the Challenge SNOMED CT labels."""
+
+
+def s2_text():
+    return """## S2. Models, training and analysis details
+
+*Signal handling.* Raw samples were converted to millivolts with the gains in the record headers and arranged in the standard lead order. The limb leads satisfied Einthoven's relation (lead III = lead II − lead I) in every cohort, with a root-mean-square residual of at most 0.001 mV. No filtering was applied to the inputs of the deep learning models. Each input lead was standardized with the mean and standard deviation of that lead in the first 2 000 training recordings.
+
+*SE-ResNet.* One-dimensional residual network with squeeze-and-excitation blocks (Hu et al., 2018) on the 500 Hz signal. A stem convolution (kernel 15, stride 2, 32 channels) with batch normalization, rectified linear activation and max pooling was followed by four stages of two residual blocks (32, 64, 128 and 256 channels; kernel 7; stride 2 in the first block of stages 2 to 4). Each block contained two convolutions with batch normalization, dropout of 0.1 and a squeeze-and-excitation module with reduction ratio 8. Global average pooling, dropout of 0.2 and a linear layer produced eleven outputs (2.2 million parameters).
+
+*InceptionTime.* As in the PTB-XL benchmark (Strodthoff et al., 2021), the input was average-pooled to 100 Hz. Six inception modules (Ismail Fawaz et al., 2020), each with a 32-channel bottleneck convolution (omitted for single-channel input), three parallel convolutions with kernel sizes 39, 19 and 9 and a max-pooling branch (32 filters each), were followed by batch normalization and rectified linear activation, with a residual connection every third module. Global average pooling and a linear layer produced the outputs (0.4 million parameters).
+
+*Training.* The loss was binary cross-entropy with a positive-class weight equal to the ratio of negative to positive training recordings of each class. Optimization used AdamW (learning rate 10⁻³, weight decay 10⁻⁴) with cosine annealing over at most 40 epochs, a batch size of 128 and mixed precision. Training recordings were augmented by random amplitude scaling (factor 0.9 to 1.1) and a random circular time shift of up to 100 ms. Training stopped when the mean average precision on the validation set had not improved for eight epochs, and the weights of the best validation epoch were kept. Seeds 1337, 1, 2, 3 and 4 were used.
+
+*Feature-based model.* Each lead was band-pass filtered (0.5 to 40 Hz, third-order Butterworth, zero phase) and R peaks were detected with NeuroKit2. From each lead we derived ten rhythm features (mean, standard deviation, coefficient of variation, minimum and maximum of the RR interval, root mean square of successive differences, proportion of successive differences above 50 ms, number of beats, median absolute successive difference divided by the mean RR interval, and mean correlation of each beat with the median beat), eleven measurements on the median beat (R and S amplitude and their difference, QRS width, ST level 40 and 80 ms after the J point, maximum, minimum, extreme value and area of the T wave, and P-wave amplitude, all relative to the PR segment), and the median beat resampled to 50 Hz (35 values): 56 features per lead. One LightGBM classifier per class was trained with at most 2 000 trees (learning rate 0.03, 31 leaves, row and column subsampling of 0.8 and 0.5), the positive-class weight above, and early stopping on validation average precision after 100 rounds without improvement.
+
+*Bootstrap.* Within each class and resample, the same recordings were used for every configuration and the twelve-lead model; resamples without a positive recording were discarded, and percentile intervals were used. A one-sided bootstrap p-value for a gap greater than zero was adjusted with the Benjamini-Hochberg procedure (Benjamini and Hochberg, 1995), separately for the single-lead cells and the reduced lead sets; the adjusted values are given in Supplementary Data 1.
+
+*Behaviour on missed diagnoses.* A decision threshold was set for each class on the validation set by maximizing the F1 score over thresholds from 0.05 to 0.95. A positive recording was missed when its predicted probability was below the threshold. Abnormal classes were all classes except sinus rhythm; a second proportion considered only non-rhythm classes. The expected proportion was estimated from 1 000 random samples, of equal size, of test recordings negative for the missed class but carrying at least one abnormal label. Cells with fewer than five missed recordings were not analysed. Proportions were computed for each seed with that seed's thresholds and averaged over seeds.
+
+*Implementation.* Python 3.13, PyTorch 2.11, scikit-learn 1.9, LightGBM 4.7, NeuroKit2 0.2.13 and WFDB 4.3, on one NVIDIA RTX 5090 graphics processor."""
 
 
 def table_s1():
@@ -151,29 +172,29 @@ TRIPOD = [
     ("Methods: data", "5b", "Not reported here; collection periods are given in the source publications of each database"),
     ("Methods: participants", "6a", "Section 2.1; Table 1"), ("Methods: participants", "6b", "Section 2.1; Table S1"),
     ("Methods: participants", "6c", "Not applicable"),
-    ("Methods: data preparation", "7", "Sections 2.1 and 2.3; Supplementary S1"),
+    ("Methods: data preparation", "7", "Sections 2.1 and 2.3; Supplementary S1 and S2"),
     ("Methods: outcome", "8a", "Section 2.2; Table 2"),
     ("Methods: outcome", "8b", "Labels are those assigned by the source institutions; see Section 4.7"),
     ("Methods: outcome", "8c", "Not applicable (retrospective labels)"),
-    ("Methods: predictors", "9a", "Sections 2.4 and 2.5.3"), ("Methods: predictors", "9b", "Sections 2.3, 2.4 and 2.5.3"),
+    ("Methods: predictors", "9a", "Sections 2.3 and 2.4; Supplementary S2"), ("Methods: predictors", "9b", "Sections 2.3 and 2.4; Supplementary S2"),
     ("Methods: predictors", "9c", "Not applicable"),
     ("Methods: sample size", "10", "Section 2.1 (all available recordings used); Section 4.8 (classes with few positives)"),
     ("Methods: missing data", "11", "Section 2.1; Table S1 (no missing signal values; excluded recordings listed)"),
-    ("Methods: analytical methods", "12a", "Section 2.3"), ("Methods: analytical methods", "12b", "Sections 2.3 and 2.5"),
-    ("Methods: analytical methods", "12c", "Section 2.5"), ("Methods: analytical methods", "12d", "Sections 2.8 and 3.4 (between cohorts)"),
-    ("Methods: analytical methods", "12e", "Sections 2.6 to 2.9"), ("Methods: analytical methods", "12f", "Not applicable"),
-    ("Methods: analytical methods", "12g", "Section 2.5.2 (seed ensemble)"),
-    ("Methods: class imbalance", "13", "Section 2.5.2 (class-weighted loss); Section 2.5.3"),
-    ("Methods: fairness", "14", "Not addressed"), ("Methods: model output", "15", "Sections 2.5.2 and 2.9"),
+    ("Methods: analytical methods", "12a", "Section 2.3"), ("Methods: analytical methods", "12b", "Section 2.4; Supplementary S2"),
+    ("Methods: analytical methods", "12c", "Section 2.5"), ("Methods: analytical methods", "12d", "Sections 2.6 and 3.4 (between cohorts)"),
+    ("Methods: analytical methods", "12e", "Sections 2.5 to 2.7"), ("Methods: analytical methods", "12f", "Not applicable"),
+    ("Methods: analytical methods", "12g", "Section 2.4 (seed ensemble)"),
+    ("Methods: class imbalance", "13", "Section 2.4; Supplementary S2 (class-weighted loss)"),
+    ("Methods: fairness", "14", "Not addressed"), ("Methods: model output", "15", "Section 2.7; Supplementary S2"),
     ("Methods: training vs evaluation", "16", "Section 2.1; Section 4.7"),
-    ("Methods: ethical approval", "17", "Section 2.10 (public de-identified data)"),
+    ("Methods: ethical approval", "17", "Declarations, ethics statement (public de-identified data)"),
     ("Open science", "18a", "Declarations"), ("Open science", "18b", "Declarations"),
     ("Open science", "18c", "No protocol was prepared"), ("Open science", "18d", "Not registered"),
     ("Open science", "18e", "Data availability statement"), ("Open science", "18f", "Code availability statement"),
     ("Patient and public involvement", "19", "No involvement"),
     ("Results: participants", "20a", "Table 1; Table S1"), ("Results: participants", "20b", "Table 1; Table 2"),
     ("Results: participants", "20c", "Table 2"), ("Results: model development", "21", "Tables 1 and 2"),
-    ("Results: model specification", "22", "Section 2.5; code repository"),
+    ("Results: model specification", "22", "Section 2.4; Supplementary S2; code repository"),
     ("Results: model performance", "23a", "Section 3; Table 3; Table S2; Supplementary Data 1"),
     ("Results: model performance", "23b", "Section 3.4; Table S4"), ("Results: model updating", "24", "Not applicable"),
     ("Discussion: interpretation", "25", "Sections 4.1 to 4.5"), ("Discussion: limitations", "26", "Section 4.8"),
@@ -186,6 +207,7 @@ def main():
     parts = [
         "# Supplementary material",
         s1_text(),
+        s2_text(),
         "## Table S1. Exclusions by cohort and reason", table_s1(),
         "## Table S2. Twelve-lead reference performance",
         "AUPRC (AUROC) of the twelve-lead model for each class, cohort and model (seed ensembles for the deep learning models). n/a: class not available in the source; –: the feature-based model was trained in Chapman and PTB-XL only.",
@@ -195,7 +217,7 @@ def main():
         table_s3(),
         "## Table S4. Agreement between models and between cohorts", table_s4(),
         "## Table S5. Behaviour of single-lead models on missed diagnoses",
-        "For single-lead cells classified as a loss: proportion of missed positive recordings that the model reported as another abnormal class absent from the recording, against the same proportion in random abnormal recordings negative for the missed class (Section 2.9).",
+        "For single-lead cells classified as a loss: proportion of missed positive recordings that the model reported as another abnormal class absent from the recording, against the same proportion in random abnormal recordings negative for the missed class (Section 2.7; Supplementary S2).",
         table_s5(),
         "## Table S6. Broad label definition",
         "Single-lead sufficiency under the primary and the broad label definitions (Table 2) for the classes whose definition differs (SE-ResNet).",
