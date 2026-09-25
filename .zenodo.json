@@ -1,0 +1,14 @@
+{
+  "title": "Single-lead ECG sufficiency across diagnoses: code, aggregate results, labels and data partitions",
+  "upload_type": "software",
+  "creators": [
+    {
+      "name": "Köksal, Fatih",
+      "affiliation": "University of Health Sciences, Bursa Yüksek İhtisas Training and Research Hospital, Department of Cardiology",
+      "orcid": "0000-0002-4197-4683"
+    }
+  ],
+  "description": "Code, aggregate results, labels and data partitions for a class-level analysis of single- and reduced-lead deep learning on the electrocardiogram across four public cohorts (Chapman, Ningbo, Georgia, PTB-XL).",
+  "license": "MIT",
+  "keywords": ["electrocardiography", "single-lead ECG", "reduced lead set", "deep learning", "wearable devices"]
+}

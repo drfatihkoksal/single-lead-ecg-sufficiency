@@ -4,6 +4,9 @@ Code and aggregate results for the paper *"For which diagnoses is a single elect
 lead sufficient? A class-level analysis of single- and reduced-lead deep learning across four
 independent cohorts"* (under review).
 
+Archived on Zenodo: [10.5281/zenodo.22946134](https://doi.org/10.5281/zenodo.22946134) (all versions); the version
+used for the submitted manuscript is v1.0.0, [10.5281/zenodo.22946135](https://doi.org/10.5281/zenodo.22946135).
+
 For eleven diagnostic classes (rhythm, axis, conduction, hypertrophy and repolarization) the
 study trains models on each of the twelve standard leads, on four device lead sets and on the
 full twelve-lead ECG, and asks whether the loss in area under the precision-recall curve

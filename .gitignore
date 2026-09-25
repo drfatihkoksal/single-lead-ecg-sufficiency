@@ -3,6 +3,7 @@
 /*
 !/.gitignore
 !/README.md
+!/.zenodo.json
 !/LICENSE
 !/requirements.txt
 !/run_grid.sh
