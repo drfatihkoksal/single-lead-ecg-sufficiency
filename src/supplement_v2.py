@@ -9,7 +9,7 @@ artifacts_v2/aggregate*/ so that every number is traceable.
   Table S4  agreement between models and between cohorts (incl. Cohen's kappa)
   Table S5  behaviour of single-lead models on missed diagnoses
   Table S6  broad label definition (SE-ResNet, one seed) vs primary definition
-  Figures S1-S2 captions, Supplementary Data 1 description, TRIPOD+AI checklist
+  Figures S1-S2 captions, TRIPOD+AI checklist
 
 Run:  python -m src.supplement_v2     -> submission_cibm/supplementary.md
 """
@@ -56,7 +56,7 @@ def s2_text():
 
 *Feature-based model.* Each lead was band-pass filtered (0.5 to 40 Hz, third-order Butterworth, zero phase) and R peaks were detected with NeuroKit2. From each lead we derived ten rhythm features (mean, standard deviation, coefficient of variation, minimum and maximum of the RR interval, root mean square of successive differences, proportion of successive differences above 50 ms, number of beats, median absolute successive difference divided by the mean RR interval, and mean correlation of each beat with the median beat), eleven measurements on the median beat (R and S amplitude and their difference, QRS width, ST level 40 and 80 ms after the J point, maximum, minimum, extreme value and area of the T wave, and P-wave amplitude, all relative to the PR segment), and the median beat resampled to 50 Hz (35 values): 56 features per lead. One LightGBM classifier per class was trained with at most 2 000 trees (learning rate 0.03, 31 leaves, row and column subsampling of 0.8 and 0.5), the positive-class weight above, and early stopping on validation average precision after 100 rounds without improvement.
 
-*Bootstrap.* Within each class and resample, the same recordings were used for every configuration and the twelve-lead model; resamples without a positive recording were discarded, and percentile intervals were used. A one-sided bootstrap p-value for a gap greater than zero was adjusted with the Benjamini-Hochberg procedure (Benjamini and Hochberg, 1995), separately for the single-lead cells and the reduced lead sets; the adjusted values are given in Supplementary Data 1.
+*Bootstrap.* Within each class and resample, the same recordings were used for every configuration and the twelve-lead model; resamples without a positive recording were discarded, and percentile intervals were used. A one-sided bootstrap p-value for a gap greater than zero was adjusted with the Benjamini-Hochberg procedure (Benjamini and Hochberg, 1995), separately for the single-lead cells and the reduced lead sets; the adjusted values are given for every cell in the archived results (artifacts_v2/aggregate/cells.csv; Zenodo, https://doi.org/10.5281/zenodo.22946135).
 
 *Behaviour on missed diagnoses.* A decision threshold was set for each class on the validation set by maximizing the F1 score over thresholds from 0.05 to 0.95. A positive recording was missed when its predicted probability was below the threshold. Abnormal classes were all classes except sinus rhythm; a second proportion considered only non-rhythm classes. The expected proportion was estimated from 1 000 random samples, of equal size, of test recordings negative for the missed class but carrying at least one abnormal label. Cells with fewer than five missed recordings were not analysed. Proportions were computed for each seed with that seed's thresholds and averaged over seeds.
 
@@ -195,7 +195,7 @@ TRIPOD = [
     ("Results: participants", "20a", "Table 1; Table S1"), ("Results: participants", "20b", "Table 1; Table 2"),
     ("Results: participants", "20c", "Table 2"), ("Results: model development", "21", "Tables 1 and 2"),
     ("Results: model specification", "22", "Section 2.4; Supplementary S2; code repository"),
-    ("Results: model performance", "23a", "Section 3; Table 3; Table S2; Supplementary Data 1"),
+    ("Results: model performance", "23a", "Section 3; Table 3; Table S2; archived cell-level results (Zenodo)"),
     ("Results: model performance", "23b", "Section 3.4; Table S4"), ("Results: model updating", "24", "Not applicable"),
     ("Discussion: interpretation", "25", "Sections 4.1 to 4.5"), ("Discussion: limitations", "26", "Section 4.8"),
     ("Discussion: usability", "27a", "Section 4.8 (wearable recordings)"), ("Discussion: usability", "27b", "Not applicable"),
@@ -224,8 +224,6 @@ def main():
         table_s6(),
         "## Figures S1 and S2",
         "![](../figures/v2/fig2_sufficiency_inceptiontime.png)\n\n**Figure S1.** Diagnostic sufficiency map for InceptionTime (as Figure 2).\n\n![](../figures/v2/fig2_sufficiency_gbm.png)\n\n**Figure S2.** Diagnostic sufficiency map for the feature-based model in Chapman and PTB-XL (single leads only). In PTB-XL, supraventricular tachycardia (three positive test recordings, twelve-lead AUPRC 0.02) appears sufficient on many leads; this illustrates why classes with a twelve-lead AUPRC below 0.50 are flagged rather than interpreted.",
-        "## Supplementary Data 1",
-        "Supplementary_Data_1.csv (comma-separated): one row per cohort, model, lead configuration and class, with the number of positive test recordings, AUPRC, AUROC, twelve-lead AUPRC, gap, relative gap, bootstrap 95% confidence interval, seed standard deviation, q-value and the sufficiency classification under every margin.",
         "## TRIPOD+AI checklist",
         "Items and numbering follow the TRIPOD+AI statement (Collins et al., BMJ 2024;385:e078378).",
         _md(pd.DataFrame(TRIPOD, columns=["Section", "Item", "Reported in"])),
