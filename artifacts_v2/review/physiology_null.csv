@@ -1,0 +1,4 @@
+cls,criterion_leads,best_leads,hits,cohorts,p_uniform
+LAD,I II aVF,II II II aVF,4,4,0.00390625
+RBBB,V1 V2 I V6,V2 I V1 V1,4,4,0.012345679012345677
+LVH,V1 V5 V6 aVL V3,V5 aVL V5 V5,4,4,0.030140817901234573

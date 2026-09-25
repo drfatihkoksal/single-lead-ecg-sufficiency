@@ -9,6 +9,9 @@ artifacts_v2/aggregate*/ so that every number is traceable.
   Table S4  agreement between models and between cohorts (incl. Cohen's kappa)
   Table S5  behaviour of single-lead models on missed diagnoses
   Table S6  broad label definition (SE-ResNet, one seed) vs primary definition
+  Tables S7-S10  lead I vs II/aVF for AF, noise floor from equivalent lead sets, within-class ranking
+                 agreement and variance decomposition, label consistency (artifacts_v2/review/)
+  Table S11  prevalence-normalized sufficiency, test-set selection optimism, physiological lead match
   Figures S1-S2 captions, TRIPOD+AI checklist
 
 Run:  python -m src.supplement_v2     -> submission_cibm/supplementary.md
@@ -203,6 +206,104 @@ TRIPOD = [
 ]
 
 
+REV = C.ART_V2 / "review"
+MODEL = {"seresnet": "SE-ResNet", "inceptiontime": "InceptionTime", "gbm": "Feature-based"}
+
+
+def _ci(m, lo, hi):
+    return _num(f"{m:.3f} [{lo:.3f}, {hi:.3f}]")
+
+
+def table_s7():
+    b = pd.read_csv(REV / "bootstrap.csv"); c = pd.read_csv(AGG / "cells.csv")
+    rows = []
+    for r in b[b.cls == "AF"].itertuples():
+        a = c[(c.cohort == r.cohort) & (c.arch == r.arch) & (c.cls == "AF") & (c.kind == "single")].set_index("spec")
+        rows.append({"Cohort": NAMES[r.cohort], "Model": MODEL[r.arch],
+                     "AUPRC lead I / II / aVF": " / ".join(f"{a.loc[x, 'auprc']:.2f}" for x in ("I", "II", "aVF")),
+                     "Twelve-lead AUPRC": f"{a.loc['I', 'auprc_ceiling']:.2f}",
+                     "Gap(I) − gap(II) [95% CI]": _ci(r.d_I_II, r.d_I_II_lo, r.d_I_II_hi),
+                     "Gap(I) − gap(aVF) [95% CI]": _ci(r.d_I_aVF, r.d_I_aVF_lo, r.d_I_aVF_hi)})
+    return _md(pd.DataFrame(rows))
+
+
+def table_s8():
+    b = pd.read_csv(REV / "bootstrap.csv"); c = pd.read_csv(AGG / "cells.csv")
+    d = c[(c.kind == "device") & (c.arch != "gbm") & (c.sufficiency != "na")]
+    rows = []
+    for a, bb, lab in (("I+II", "LIMB6", "Leads I and II vs six limb leads"),
+                       ("CH3", "CH4", "Leads I, II, V2 vs I, II, III, V2")):
+        k = f"d_{a}_{bb}"
+        x = b.dropna(subset=[k]); x = x[~((x.cohort == "ningbo") & x.cls.isin(["AF", "AFL"]))]
+        m = d[d.spec.isin([a, bb])].pivot_table(index=["cohort", "arch", "cls"], columns="spec",
+                                                  values="sufficiency", aggfunc="first").dropna()
+        rows.append({"Comparison": lab, "Cells": len(x),
+                     "Median absolute gap difference": f"{x[k].abs().median():.3f}",
+                     "95th percentile of the absolute gap difference": f"{x[k].abs().quantile(.95):.3f}",
+                     "Different sufficiency category": f"{int((m[a] != m[bb]).sum())} ({100 * (m[a] != m[bb]).mean():.0f}%)"})
+    return _md(pd.DataFrame(rows))
+
+
+def table_s9():
+    k = pd.read_csv(REV / "concordance_within_class.csv")
+    w = k[k.what == "kendall_w_cohorts"].pivot_table(index="cls", columns="arch", values="value")
+    sp = k[k.what == "spearman_archs"].groupby("cls").value.agg(["min", "max"])
+    rows = []
+    for cl in ORDER:
+        if cl not in w.index:
+            continue
+        rows.append({"Class": cl, "Kendall's W across cohorts (SE-ResNet / InceptionTime)":
+                         f"{w.loc[cl, 'seresnet']:.2f} / {w.loc[cl, 'inceptiontime']:.2f}",
+                     "Spearman ρ between architectures (range over cohorts)":
+                         _num(f"{sp.loc[cl, 'min']:.2f} to {sp.loc[cl, 'max']:.2f}")})
+    v = pd.read_csv(REV / "variance_decomposition.csv", index_col=0)
+    names = {"cls": "Class", "lead": "Lead", "cls:lead": "Class × lead", "cohort": "Cohort",
+             "arch": "Architecture", "Residual": "Residual"}
+    vd = pd.DataFrame([{"Source": names[i], "Share of variance": f"{100 * v.loc[i, 'share']:.1f}%"}
+                       for i in ["cls", "cls:lead", "lead", "cohort", "arch", "Residual"]])
+    return _md(pd.DataFrame(rows)) + "\n\n" + _md(vd)
+
+
+def table_s10():
+    h = pd.read_csv(REV / "label_heart_rate.csv"); co = pd.read_csv(REV / "label_sr_cocoding.csv").set_index("cohort")
+    rows = []
+    for ds in NAMES:
+        g = h[h.cohort == ds].set_index("cls")
+        rows.append({"Cohort": NAMES[ds],
+                     "SB label with rate < 60/min": f"{100 * g.loc['SB', 'label_agrees_with_hr']:.0f}%",
+                     "Regular rate < 60/min with SB label": f"{100 * g.loc['SB', 'hr_rule_labelled']:.0f}%",
+                     "ST label with rate > 100/min": f"{100 * g.loc['ST', 'label_agrees_with_hr']:.0f}%",
+                     "Regular rate > 100/min with ST label": f"{100 * g.loc['ST', 'hr_rule_labelled']:.0f}%",
+                     "SR coded with a morphological diagnosis": f"{100 * co.loc[ds, 'sr_given_morph']:.0f}%",
+                     "SR coded without one": f"{100 * co.loc[ds, 'sr_given_no_morph']:.0f}%"})
+    return _md(pd.DataFrame(rows))
+
+
+def table_s11():
+    import json
+    b = pd.read_csv(REV / "bootstrap.csv")
+    n = pd.read_csv(REV / "normalized_sufficiency.csv", index_col=0)
+    c = pd.read_csv(AGG / "cells.csv")
+    s1 = c[(c.kind == "single") & (c.arch != "gbm")]
+    prim = s1.groupby("dx_group").sufficiency.apply(lambda x: int((x == "sufficient").sum()))
+    tot = s1[s1.sufficiency != "na"].groupby("dx_group").size()
+    rows = [{"Group": g.capitalize(), "Sufficient single-lead cells, primary AUPRC": f"{prim[g]} of {tot[g]}",
+             "Sufficient, prevalence-normalized AUPRC": f"{int(n.loc[g, 'sufficient'])} of {tot[g]}"}
+            for g in ["rhythm", "axis", "conduction", "hypertrophy", "repolarization"]]
+    ph = pd.read_csv(REV / "physiology_null.csv")
+    p_all = json.loads((REV / "summary.json").read_text())["physiology_joint_p"]
+    rows2 = [{"Class": r.cls, "Leads named by the diagnostic criteria": r.criterion_leads,
+              "Best single lead (Chapman, Georgia, Ningbo, PTB-XL)": ", ".join(r.best_leads.split()),
+              "Probability under a uniform choice": f"{r.p_uniform:.3f}"} for r in ph.itertuples()]
+    opt = b[b.arch != "gbm"].optimism_mean
+    txt = (f"Choosing the best lead on the test set underestimated its AUPRC gap by a median of "
+           f"{opt.median():.3f} (interquartile range {opt.quantile(.25):.3f} to {opt.quantile(.75):.3f}) when the lead "
+           f"was chosen on one random half of the test set and evaluated on the other (200 splits, deep learning models). "
+           f"The joint probability of the three matches in the table above, assuming independence, is "
+           f"{p_all:.1e}; the lead sets were named from the criteria, but the test was defined after the results were known.")
+    return _md(pd.DataFrame(rows)) + "\n\n" + _md(pd.DataFrame(rows2)) + "\n\n" + txt
+
+
 def main():
     parts = [
         "# Supplementary material",
@@ -222,6 +323,21 @@ def main():
         "## Table S6. Broad label definition",
         "Single-lead sufficiency under the primary and the broad label definitions (Table 2) for the classes whose definition differs (SE-ResNet).",
         table_s6(),
+        "## Table S7. Lead I against leads II and aVF for atrial fibrillation",
+        "Absolute AUPRC of the single-lead models and paired bootstrap difference of their AUPRC gaps to the twelve-lead model (1 000 resamples; a positive value means a larger loss on lead I). Ningbo does not code atrial fibrillation.",
+        table_s7(),
+        "## Table S8. Model noise floor from information-equivalent lead sets",
+        "Leads I and II determine the six limb leads, and leads I, II and V2 determine leads I, II, III and V2, so differences between these pairs reflect training and optimization rather than information. Deep learning models, all classes and cohorts; gap difference: difference between the AUPRC gaps of the two sets (seed ensembles, mean over paired bootstrap resamples).",
+        table_s8(),
+        "## Table S9. Agreement of the lead ranking within each class",
+        "Kendall's W: agreement of the ranking of the twelve single-lead gaps across the cohorts in which the class is available. Spearman ρ: agreement of the ranking between the two architectures within a cohort. Variance decomposition: two-way analysis of variance of the single-lead gaps of both architectures.",
+        table_s9(),
+        "## Table S10. Consistency of rhythm labels with the signal",
+        "Test recordings. Heart rate from the median RR interval of R peaks detected in lead II (NeuroKit2); regular: not labelled atrial fibrillation or flutter. SB, sinus bradycardia; ST, sinus tachycardia; SR, sinus rhythm; morphological diagnosis: left axis deviation, right bundle branch block, left ventricular hypertrophy, T-wave change or ST-T change; SR rows restricted to regular recordings with a rate of 60 to 100/min.",
+        table_s10(),
+        "## Table S11. Further robustness checks",
+        "Top: sufficiency on the prevalence-normalized AUPRC scale, (AUPRC − π)/(1 − π) with π the test-set prevalence, against the primary scale (deep learning models, margin 0.05 on both scales). Bottom: whether the best single lead (SE-ResNet) falls among the leads used by the diagnostic criteria (axis: I, II, aVF; right bundle branch block: V1, V2 and the terminal S wave in I and V6; left ventricular hypertrophy: Sokolow-Lyon V1, V5, V6 and Cornell aVL, V3), with the binomial probability of at least as many matches if the best lead were chosen at random.",
+        table_s11(),
         "## Figures S1 and S2",
         "![](../figures/v2/fig2_sufficiency_inceptiontime.png)\n\n**Figure S1.** Diagnostic sufficiency map for InceptionTime (as Figure 2).\n\n![](../figures/v2/fig2_sufficiency_gbm.png)\n\n**Figure S2.** Diagnostic sufficiency map for the feature-based model in Chapman and PTB-XL (single leads only). In PTB-XL, supraventricular tachycardia (three positive test recordings, twelve-lead AUPRC 0.02) appears sufficient on many leads; this illustrates why classes with a twelve-lead AUPRC below 0.50 are flagged rather than interpreted.",
         "## TRIPOD+AI checklist",

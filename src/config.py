@@ -172,3 +172,19 @@ SNOMED_MAP_BROAD = {**SNOMED_MAP,
              "425623009", "425419005", "426434006"],            # + lateral/inferior/anterior ischaemia
     "RBBB": ["59118001", "713427006", "713426002"],             # + incomplete RBBB
 }
+
+
+# ---- interpretation flags (Table 3, Fig. 2) ---------------------------------
+# dagger: twelve-lead AUPRC below 0.50 or fewer than MIN_POS_TEST positive test recordings
+# double dagger: label inconsistent with the signal (artifacts_v2/review/label_*.csv): in PTB-XL
+# only 15% of regular recordings with a heart rate below 60/min carry the sinus bradycardia code;
+# in Georgia sinus rhythm is never coded together with a morphological diagnosis
+MIN_POS_TEST = 30
+LABEL_INCONSISTENT = {("ptbxl_snomed", "SB"), ("georgia", "SR")}
+
+
+def flag(cohort, cls, low_ceiling, n_pos):
+    """Interpretation flag for a class in a cohort: '†', '‡' or ''."""
+    if (cohort, cls) in LABEL_INCONSISTENT:
+        return "‡"
+    return "†" if (bool(low_ceiling) or n_pos < MIN_POS_TEST) else ""

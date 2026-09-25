@@ -36,6 +36,7 @@ COHORT = {"chapman": ("Chapman", "#2a78d6", "o"), "ningbo": ("Ningbo", "#eb6834"
           "georgia": ("Georgia", "#1baf7a", "^"), "ptbxl_snomed": ("PTB-XL", "#eda100", "D")}
 GROUPS = [("Rhythm", ["SR", "SB", "ST", "AF", "AFL", "SVT"]), ("Axis", ["LAD"]),
           ("Conduction", ["RBBB"]), ("Hypertrophy", ["LVH"]), ("Repolarization", ["TWC", "STTC"])]
+RHYTHM = ["SR", "SB", "ST", "AF", "AFL", "SVT"]
 DEVICES = [("I+II", "I, II"), ("LIMB6", "Limb 6"), ("CH3", "I, II, V2"), ("CH4", "I, II, III, V2")]
 
 plt.rcParams.update({"font.size": 7, "axes.titlesize": 8, "axes.labelsize": 7,
@@ -69,7 +70,8 @@ def fig2(arch="seresnet"):
     for ax, ds in zip(np.atleast_1d(axes).ravel(), cohorts):
         g = cells[cells.cohort == ds]
         st = {(r.spec, r.cls): r.sufficiency for r in g.itertuples()}
-        low = set(g[g.low_ceiling & (g.kind == "ceiling")].cls)
+        ce = g[g.kind == "ceiling"]
+        low = {r.cls: C.flag(ds, r.cls, r.low_ceiling, r.n_pos_test) for r in ce.itertuples()}
         for (gname, cl), yy in zip(rows, ypos):
             for xi, sp in enumerate(cols):
                 if sp is None:
@@ -86,7 +88,7 @@ def fig2(arch="seresnet"):
         ax.set_xticks([i + 0.5 for i, c in enumerate(cols) if c is not None])
         ax.set_xticklabels([l for l, c in zip(xlab, cols) if c is not None], rotation=90)
         ax.set_yticks([p + 0.5 for p in ypos])
-        ax.set_yticklabels([cl + ("†" if cl in low else "") for _, cl in rows])
+        ax.set_yticklabels([cl + low.get(cl, "") for _, cl in rows])
         ax.tick_params(length=0)
         for sp_ in ax.spines.values():
             sp_.set_visible(False)
@@ -123,8 +125,10 @@ def fig3():
             d = wide[(wide.cohort == ds)].dropna(subset=[xcol, ycol])
             name, col, mk = COHORT[ds]
             r = pearsonr(d[xcol], d[ycol])[0]
+            nr = d[~d.cls.isin(RHYTHM)]
+            r_nr = pearsonr(nr[xcol], nr[ycol])[0]
             ax.scatter(d[xcol], d[ycol], s=11, marker=mk, facecolor=col, edgecolor="white",
-                       linewidth=0.3, alpha=0.85, label=f"{name}  r = {r:.2f}")
+                       linewidth=0.3, alpha=0.85, label=f"{name}  r = {r:.2f} ({r_nr:.2f})")
         ax.set_xlim(lo, hi); ax.set_ylim(lo, hi); ax.set_aspect("equal")
         ax.set_xlabel(xlabel); ax.set_ylabel(ylabel)
         ax.set_title(title, loc="left", color=INK, fontweight="bold")
@@ -140,26 +144,30 @@ def fig3():
 
     ax = axes[2]
     order = list(COHORT)
-    m = np.full((4, 4), np.nan)
-    sub = cc[(cc.arch == "seresnet") & (cc.classes == "morphology")]
-    for r in sub.itertuples():
-        i, j = order.index(r.cohort_a), order.index(r.cohort_b)
-        m[max(i, j), min(i, j)] = r.r
+    m = np.full((4, 4), np.nan)                 # SE-ResNet below, InceptionTime above the diagonal
+    for arch, lower in (("seresnet", True), ("inceptiontime", False)):
+        sub = cc[(cc.arch == arch) & (cc.classes == "morphology")]
+        for r in sub.itertuples():
+            i, j = order.index(r.cohort_a), order.index(r.cohort_b)
+            hi_, lo_ = max(i, j), min(i, j)
+            m[(hi_, lo_) if lower else (lo_, hi_)] = r.r
     cmap = matplotlib.colors.LinearSegmentedColormap.from_list("blue", ["#eaf2fc", "#2a78d6", "#0d3b73"])
     for i in range(4):
-        for j in range(i):
+        for j in range(4):
             v = m[i, j]
+            if np.isnan(v):
+                continue
             ax.add_patch(Rectangle((j + 0.04, i + 0.04), 0.92, 0.92, facecolor=cmap((v - 0.5) / 0.5)))
-            ax.text(j + 0.5, i + 0.5, f"{v:.2f}", ha="center", va="center", fontsize=7,
+            ax.text(j + 0.5, i + 0.5, f"{v:.2f}", ha="center", va="center", fontsize=6.5,
                     color="white" if v > 0.65 else INK)
-    ax.set_xlim(0, 3); ax.set_ylim(4, 1)
-    ax.set_xticks([0.5, 1.5, 2.5]); ax.set_xticklabels([COHORT[d][0] for d in order[:3]])
-    ax.set_yticks([1.5, 2.5, 3.5]); ax.set_yticklabels([COHORT[d][0] for d in order[1:]])
+    ax.set_xlim(0, 4); ax.set_ylim(4, 0)
+    ax.set_xticks(np.arange(4) + 0.5); ax.set_xticklabels([COHORT[d][0] for d in order], rotation=30, ha="right")
+    ax.set_yticks(np.arange(4) + 0.5); ax.set_yticklabels([COHORT[d][0] for d in order])
     ax.tick_params(length=0)
     for sp_ in ax.spines.values():
         sp_.set_visible(False)
     ax.set_aspect("equal")
-    ax.set_title("c  Cohorts (non-rhythm, r)", loc="left", color=INK, fontweight="bold")
+    ax.set_title("c  Cohorts (non-rhythm)", loc="left", color=INK, fontweight="bold")
     fig.tight_layout(w_pad=1.2)
     _save(fig, "fig3_reproducibility")
 
@@ -245,7 +253,7 @@ def graphical_abstract():
              "Sufficient: 95% CI of the AUPRC loss", "entirely below 0.05"]
     for i, t in enumerate(lines):
         fig.text(0.02, 0.72 - i * 0.075, t, fontsize=8, color=INK2)
-    fig.text(0.02, 0.12, "Rate rhythms: any lead.  AF: II/aVF > I.\nOther diagnoses: the closest lead\nfollows lead-vector physiology.",
+    fig.text(0.02, 0.12, "Rate rhythms: any lead*.  AF: II/aVF > I.\nOther diagnoses: the closest lead\nfollows lead-vector physiology.",
              fontsize=8, color=INK, linespacing=1.4)
 
     ax = fig.add_axes([0.43, 0.14, 0.44, 0.74])
@@ -268,7 +276,8 @@ def graphical_abstract():
         r0 += len(cls)
         if r0 < len(order):
             ax.axhline(r0 - 0.05, color="white", lw=2)
-    ax.text(0, len(order) + 0.9, "Number of cohorts in which the single lead was sufficient (of 4; AF and AFL of 3)",
+    ax.text(0, len(order) + 0.9, "Cohorts in which the single lead was sufficient (SE-ResNet; of 4, AF and AFL of 3).\n"
+            "*SR and SB fall short in one cohort each, where the label is inconsistent with the signal.",
             fontsize=6, color=INK2, va="top")
     _save(fig, "graphical_abstract")
 

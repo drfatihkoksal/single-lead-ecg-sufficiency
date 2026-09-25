@@ -74,6 +74,18 @@ def table2():
     return _md(pd.DataFrame(rows))
 
 
+def _pbest():
+    f = C.ART_V2 / "review" / "bootstrap.csv"
+    if not f.exists():
+        return {}
+    b = pd.read_csv(f)
+    b = b[b.arch == "seresnet"]
+    return {(r.cohort, r.cls): {ld: getattr(r, f"pbest_{ld}") for ld in C.LEADS} for r in b.itertuples()}
+
+
+PBEST = _pbest()
+
+
 def table3():
     c = pd.read_csv(AGG / "cells.csv")
     s = c[c.kind == "single"].dropna(subset=["gap"])
@@ -83,7 +95,7 @@ def table3():
         for ds in NAMES:
             g = s[(s.cohort == ds) & (s.cls == cl)]
             if g.empty:
-                rows.append({"Class": cl, "Cohort": NAMES[ds], "Best single lead": "n/a",
+                rows.append({"Class": cl, "Cohort": NAMES[ds], "Best single lead (P)": "n/a",
                              "AUPRC gap [95% CI]": "", "Sufficient single leads (SE-ResNet / InceptionTime)": "",
                              "Sufficient reduced sets (SE-ResNet)": ""})
                 continue
@@ -91,8 +103,10 @@ def table3():
             b = se.loc[se.gap.idxmin()]
             n = {a: int((g[g.arch == a].sufficiency == "sufficient").sum()) for a in ("seresnet", "inceptiontime")}
             dv = d[(d.cohort == ds) & (d.cls == cl) & (d.arch == "seresnet") & (d.sufficiency == "sufficient")]
-            flag = "†" if bool(b.low_ceiling) else ""
-            rows.append({"Class": cl + flag, "Cohort": NAMES[ds], "Best single lead": b.spec,
+            flag = C.flag(ds, cl, b.low_ceiling, b.n_pos_test)
+            pb = PBEST.get((ds, cl), {}).get(b.spec)
+            rows.append({"Class": cl + flag, "Cohort": NAMES[ds],
+                         "Best single lead (P)": b.spec + (f" ({pb:.2f})" if pb is not None else ""),
                          "AUPRC gap [95% CI]": _num(f"{b.gap:.3f} [{b.gap_ci_lo:.3f}, {b.gap_ci_hi:.3f}]"),
                          "Sufficient single leads (SE-ResNet / InceptionTime)": f"{n['seresnet']} / {n['inceptiontime']}",
                          "Sufficient reduced sets (SE-ResNet)": "; ".join(DEVICE_LABEL[x] for x in dv.spec) or "none"})
@@ -105,7 +119,7 @@ def main():
         table1(),
         "**Table 2.** Diagnostic classes, their SNOMED CT codes and the number of positive recordings in each test set. n/a: not available in the source (Ningbo records every atrial fibrillation and flutter as atrial flutter).",
         table2(),
-        "**Table 3.** Single-lead sufficiency by class and cohort. Best single lead: lead with the smallest AUPRC gap to the twelve-lead model (SE-ResNet seed ensemble). Sufficient: upper 95% confidence bound of the gap below 0.05. † twelve-lead AUPRC below 0.50 in this cohort; interpret with caution.",
+        "**Table 3.** Single-lead sufficiency by class and cohort. Best single lead: lead with the smallest AUPRC gap to the twelve-lead model (SE-ResNet seed ensemble); P: proportion of bootstrap resamples in which this lead had the smallest gap. Sufficient: upper 95% confidence bound of the gap below 0.05. † twelve-lead AUPRC below 0.50 or fewer than 30 positive test recordings; ‡ label inconsistent with the signal (Section 3.1); interpret with caution.",
         table3(),
     ]
     OUT.parent.mkdir(parents=True, exist_ok=True)

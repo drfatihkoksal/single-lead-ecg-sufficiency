@@ -35,6 +35,7 @@ src/run_grid.py          cohort x architecture x seed x lead-configuration grid 
 src/features_gbm.py      NeuroKit2 delineation features + LightGBM baseline
 src/aggregate_seeds.py   5-seed ensembles, gap CIs, sufficiency categories, concordance
 src/confusion_v2.py      which other class a model predicts when it misses a class
+src/review_analyses.py   paired lead comparisons, noise floor, within-class agreement, label checks
 src/figures_v2.py        figures           -> figures/v2/
 src/tables_v2.py         main tables       -> submission_cibm/tables.md
 src/supplement_v2.py     supplementary     -> submission_cibm/supplementary.md
@@ -44,6 +45,7 @@ run_broad.sh             broad-label sensitivity analysis
 artifacts_v2/aggregate/        per-cell results (cells.csv), sufficiency by class, concordance,
                                summary.json and seed-ensemble test-set predictions
 artifacts_v2/aggregate_broad/  the same for the broad label definition
+artifacts_v2/review/           outputs of src/review_analyses.py (Tables S7-S11)
 artifacts_v2/dedupe/exclusions.csv  records removed as duplicates or malformed
 artifacts_v2/<cohort>/cache/   labels (primary and broad), record identifiers, preparation report
 artifacts_v2/<cohort>/splits/  training/validation/test indices into the record identifiers
@@ -82,6 +84,7 @@ done
 ./run_grid.sh          # log: artifacts_v2/grid.log
 ./post_grid.sh         # GBM baseline, aggregation, confusion analysis
 ./run_broad.sh         # broad-label sensitivity analysis (SE-ResNet, one seed)
+python -m src.review_analyses   # Tables S7-S11 (needs the per-run predictions and signals)
 
 # tables, figures and supplementary material from the aggregate results
 python -m src.tables_v2
