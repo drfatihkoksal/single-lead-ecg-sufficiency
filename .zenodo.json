@@ -9,6 +9,11 @@
     }
   ],
   "description": "Code, aggregate results, labels and data partitions for a class-level analysis of single- and reduced-lead deep learning on the electrocardiogram across four public cohorts (Chapman, Ningbo, Georgia, PTB-XL).",
-  "license": "MIT",
-  "keywords": ["electrocardiography", "single-lead ECG", "reduced lead set", "deep learning", "wearable devices"]
+  "keywords": [
+    "electrocardiography",
+    "single-lead ECG",
+    "reduced lead set",
+    "deep learning",
+    "wearable devices"
+  ]
 }
