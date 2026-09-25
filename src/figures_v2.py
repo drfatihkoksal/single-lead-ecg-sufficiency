@@ -189,7 +189,7 @@ def fig1():
         ax.annotate("", xy=(x1, y), xytext=(x0, y),
                     arrowprops=dict(arrowstyle="-|>", color=MUTED, lw=0.8, shrinkA=0, shrinkB=0))
 
-    ax.text(1, 40.5, "Four independent cohorts", fontsize=7.5, fontweight="bold", color=INK, va="top")
+    ax.text(1, 40.5, "Four cohorts, three countries", fontsize=7.5, fontweight="bold", color=INK, va="top")
     for k, (name, where, n) in enumerate([("Chapman", "China", "10 234"), ("Ningbo", "China", "34 829"),
                                            ("Georgia", "United States", "10 292"),
                                            ("PTB-XL", "Germany", "21 837")]):
@@ -253,7 +253,7 @@ def graphical_abstract():
              "Sufficient: 95% CI of the AUPRC loss", "entirely below 0.05"]
     for i, t in enumerate(lines):
         fig.text(0.02, 0.72 - i * 0.075, t, fontsize=8, color=INK2)
-    fig.text(0.02, 0.12, "Rate rhythms: any lead*.  AF: II/aVF > I.\nOther diagnoses: the closest lead\nfollows lead-vector physiology.",
+    fig.text(0.02, 0.05, "Rate rhythms: any lead*.\nAF: lead I falls short (CNNs).\nOther diagnoses: the closest lead\nfollows lead-vector physiology.",
              fontsize=8, color=INK, linespacing=1.4)
 
     ax = fig.add_axes([0.43, 0.14, 0.44, 0.74])

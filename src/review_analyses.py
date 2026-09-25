@@ -13,6 +13,8 @@ From cells.csv:
 From the signals:
   labels     heart rate from R peaks (lead II) against the sinus bradycardia / tachycardia labels, and
              co-coding of sinus rhythm with other diagnoses
+  rr         atrial fibrillation from the RR-interval features of lead I or II alone (LightGBM)
+  ordinal    three-category agreement of the sufficiency classification (weighted kappa, Gwet AC2)
 
 Outputs -> artifacts_v2/review/*.csv and summary.json
 
@@ -151,7 +153,7 @@ def concordance(cells):
     import statsmodels.formula.api as smf
     from statsmodels.stats.anova import anova_lm
     d = dl.rename(columns={"spec": "lead"})[["gap", "cls", "lead", "cohort", "arch"]]
-    fit = smf.ols("gap ~ cls * lead + cohort + arch", data=d).fit()     # string columns are categorical
+    fit = smf.ols("gap ~ cls * lead + cls:cohort + cohort + arch", data=d).fit()   # strings are categorical
     a = anova_lm(fit, typ=2)
     a["share"] = a["sum_sq"] / a["sum_sq"].sum()
     return conc, a
@@ -225,9 +227,113 @@ def label_checks():
     return pd.DataFrame(rows), pd.DataFrame(co)
 
 
-def main(jobs):
+def rr_only(seeds=(1337, 1, 2, 3, 4)):
+    """Atrial fibrillation from the ten RR-interval features of one lead (LightGBM, 5 seeds),
+    against the twelve-lead and lead-I models, with paired bootstrap gaps."""
+    import lightgbm as lgb
+    from .features_gbm import RR_NAMES
+    j = C.CLASSES.index("AF")
+    rows = []
+    for ds in ("chapman", "georgia", "ptbxl_snomed"):
+        P = C.ds_paths(ds, "any")
+        feats = np.load(C.ART_V2 / ds / "features" / "features.npy")
+        y = np.load(P.cache / "labels.npy")[:, j]
+        sp = np.load(P.splits / "split.npz"); tr, va, te = sp["train"], sp["val"], sp["test"]
+        preds = {}
+        for lead in ("I", "II"):
+            X = feats[:, C.LEADS.index(lead), :len(RR_NAMES)]
+            ps = []
+            for sd in seeds:
+                pos = y[tr].sum()
+                clf = lgb.LGBMClassifier(n_estimators=2000, learning_rate=0.03, num_leaves=31,
+                                         min_child_samples=10, subsample=0.8, subsample_freq=1,
+                                         colsample_bytree=0.8, reg_lambda=1.0,
+                                         scale_pos_weight=(len(tr) - pos) / max(pos, 1),
+                                         random_state=sd, n_jobs=16, verbose=-1)
+                clf.fit(X[tr], y[tr], eval_set=[(X[va], y[va])], eval_metric="average_precision",
+                        callbacks=[lgb.early_stopping(100, verbose=False)])
+                ps.append(clf.predict_proba(X[te])[:, 1])
+            preds[f"RR({lead})"] = np.mean(ps, axis=0)
+        yt = y[te]
+        refs = {}
+        for arch in ("seresnet", "inceptiontime", "gbm"):
+            if _complete_seeds(ds, arch)[0]:
+                Pe, ye = load_ens(ds, arch)
+                assert (ye[:, j] == yt).all()
+                refs[arch] = Pe
+        rng = np.random.default_rng(C.SEED)
+        boot = {k: [] for k in preds}
+        for b in range(N_BOOT):
+            idx = rng.integers(0, len(yt), len(yt))
+            if yt[idx].sum() == 0:
+                continue
+            c = ap(yt[idx], refs["seresnet"]["ALL"][idx, j])
+            for k, p in preds.items():
+                boot[k].append(c - ap(yt[idx], p[idx]))
+        for k, p in preds.items():
+            lo, hi = np.percentile(boot[k], [2.5, 97.5])
+            row = {"cohort": ds, "model": k, "auprc": ap(yt, p), "n_pos": int(yt.sum()),
+                   "gap_vs_seresnet_12": ap(yt, refs["seresnet"]["ALL"][:, j]) - ap(yt, p),
+                   "gap_lo": lo, "gap_hi": hi}
+            for arch, Pe in refs.items():
+                row[f"auprc_{arch}_12"] = ap(yt, Pe["ALL"][:, j])
+                row[f"auprc_{arch}_I"] = ap(yt, Pe["I"][:, j])
+                row[f"auprc_{arch}_II"] = ap(yt, Pe["II"][:, j])
+            rows.append(row)
+    return pd.DataFrame(rows)
+
+
+def ordinal_agreement(cells):
+    """Three-category (sufficient < indeterminate < loss) agreement over non-rhythm single-lead
+    cells: exact agreement, linear-weighted kappa and Gwet's AC2 with linear weights."""
+    from sklearn.metrics import cohen_kappa_score
+    order = {"sufficient": 0, "indeterminate": 1, "loss": 2}
+    s = cells[(cells.kind == "single") & (cells.group != "rhythm") & (cells.sufficiency != "na")]
+    s = s[s.arch != "gbm"]
+
+    def ac2(a, b, q=3):
+        w = 1 - np.abs(np.subtract.outer(np.arange(q), np.arange(q))) / (q - 1)
+        pab = np.zeros((q, q))
+        for x, y_ in zip(a, b):
+            pab[x, y_] += 1
+        pab /= len(a)
+        pa = (w * pab).sum()
+        pi = (pab.sum(0) + pab.sum(1)) / 2
+        pe = w.sum() / (q * (q - 1)) * (pi * (1 - pi)).sum()
+        return (pa - pe) / (1 - pe)
+
+    rows = []
+    def add(kind, name, a, b):
+        a = a.map(order).values; b = b.map(order).values
+        rows.append({"comparison": kind, "pair": name, "n": len(a), "exact": float(np.mean(a == b)),
+                     "kappa_linear": cohen_kappa_score(a, b, weights="linear"), "ac2_linear": ac2(a, b)})
+    for ds in COHORTS:
+        m = s[s.cohort == ds].pivot_table(index=["spec", "cls"], columns="arch", values="sufficiency",
+                                            aggfunc="first").dropna()
+        add("architectures", ds, m["seresnet"], m["inceptiontime"])
+    for arch in ("seresnet", "inceptiontime"):
+        m = s[s.arch == arch].pivot_table(index=["spec", "cls"], columns="cohort", values="sufficiency",
+                                          aggfunc="first")
+        for i, a in enumerate(COHORTS):
+            for b in COHORTS[i + 1:]:
+                mm = m[[a, b]].dropna()
+                add(f"cohorts ({arch})", f"{a}-{b}", mm[a], mm[b])
+    return pd.DataFrame(rows)
+
+
+def main(jobs, only=None):
     OUT.mkdir(parents=True, exist_ok=True)
     cells = pd.read_csv(AGG / "cells.csv")
+    if only:
+        if "rr" in only:
+            rr_only().to_csv(OUT / "af_rr_only.csv", index=False)
+        if "ordinal" in only:
+            ordinal_agreement(cells).to_csv(OUT / "ordinal_agreement.csv", index=False)
+        if "variance" in only:
+            conc, anova = concordance(cells)
+            anova.to_csv(OUT / "variance_decomposition.csv")
+        print("done", only)
+        return
     if not (OUT / "bootstrap.csv").exists():
         run_bootstrap(jobs).to_csv(OUT / "bootstrap.csv", index=False)
     conc, anova = concordance(cells)
@@ -248,4 +354,6 @@ def main(jobs):
 if __name__ == "__main__":
     ap_ = argparse.ArgumentParser()
     ap_.add_argument("--jobs", type=int, default=24)
-    main(ap_.parse_args().jobs)
+    ap_.add_argument("--only", nargs="+", default=None, help="rr ordinal variance")
+    a_ = ap_.parse_args()
+    main(a_.jobs, a_.only)

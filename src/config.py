@@ -184,7 +184,9 @@ LABEL_INCONSISTENT = {("ptbxl_snomed", "SB"), ("georgia", "SR")}
 
 
 def flag(cohort, cls, low_ceiling, n_pos):
-    """Interpretation flag for a class in a cohort: '†', '‡' or ''."""
+    """Interpretation flag for a class in a cohort: '†', '‡' or '' (none where the class is not coded)."""
+    if cls in UNAVAILABLE.get(cohort, []):
+        return ""
     if (cohort, cls) in LABEL_INCONSISTENT:
         return "‡"
     return "†" if (bool(low_ceiling) or n_pos < MIN_POS_TEST) else ""

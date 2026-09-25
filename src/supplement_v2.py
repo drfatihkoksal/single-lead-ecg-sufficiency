@@ -49,7 +49,7 @@ def s1_text():
 def s2_text():
     return """## S2. Models, training and analysis details
 
-*Signal handling.* Raw samples were converted to millivolts with the gains in the record headers and arranged in the standard lead order. The limb leads satisfied Einthoven's relation (lead III = lead II − lead I) in every cohort, with a root-mean-square residual of at most 0.001 mV. No filtering was applied to the inputs of the deep learning models. Each input lead was standardized with the mean and standard deviation of that lead in the first 2 000 training recordings.
+*Signal handling.* Raw samples were converted to millivolts with the gains in the record headers and arranged in the standard lead order. The limb leads satisfied Einthoven's relation (lead III = lead II − lead I) in every cohort, with a root-mean-square residual of at most 0.001 mV. No filtering was applied to the inputs of the deep learning models. Each input lead was standardized with the mean and standard deviation of that lead, estimated on 2 000 training recordings.
 
 *SE-ResNet.* One-dimensional residual network with squeeze-and-excitation blocks (Hu et al., 2018) on the 500 Hz signal. A stem convolution (kernel 15, stride 2, 32 channels) with batch normalization, rectified linear activation and max pooling was followed by four stages of two residual blocks (32, 64, 128 and 256 channels; kernel 7; stride 2 in the first block of stages 2 to 4). Each block contained two convolutions with batch normalization, dropout of 0.1 and a squeeze-and-excitation module with reduction ratio 8. Global average pooling, dropout of 0.2 and a linear layer produced eleven outputs (2.2 million parameters).
 
@@ -59,7 +59,7 @@ def s2_text():
 
 *Feature-based model.* Each lead was band-pass filtered (0.5 to 40 Hz, third-order Butterworth, zero phase) and R peaks were detected with NeuroKit2. From each lead we derived ten rhythm features (mean, standard deviation, coefficient of variation, minimum and maximum of the RR interval, root mean square of successive differences, proportion of successive differences above 50 ms, number of beats, median absolute successive difference divided by the mean RR interval, and mean correlation of each beat with the median beat), eleven measurements on the median beat (R and S amplitude and their difference, QRS width, ST level 40 and 80 ms after the J point, maximum, minimum, extreme value and area of the T wave, and P-wave amplitude, all relative to the PR segment), and the median beat resampled to 50 Hz (35 values): 56 features per lead. One LightGBM classifier per class was trained with at most 2 000 trees (learning rate 0.03, 31 leaves, row and column subsampling of 0.8 and 0.5), the positive-class weight above, and early stopping on validation average precision after 100 rounds without improvement.
 
-*Bootstrap.* Within each class and resample, the same recordings were used for every configuration and the twelve-lead model; resamples without a positive recording were discarded, and percentile intervals were used. A one-sided bootstrap p-value for a gap greater than zero was adjusted with the Benjamini-Hochberg procedure (Benjamini and Hochberg, 1995), separately for the single-lead cells and the reduced lead sets; the adjusted values are given for every cell in the archived results (artifacts_v2/aggregate/cells.csv; Zenodo, https://doi.org/10.5281/zenodo.22946135).
+*Bootstrap.* Within each class and resample, the same recordings were used for every configuration and the twelve-lead model; resamples without a positive recording were discarded, and percentile intervals were used.
 
 *Behaviour on missed diagnoses.* A decision threshold was set for each class on the validation set by maximizing the F1 score over thresholds from 0.05 to 0.95. A positive recording was missed when its predicted probability was below the threshold. Abnormal classes were all classes except sinus rhythm; a second proportion considered only non-rhythm classes. The expected proportion was estimated from 1 000 random samples, of equal size, of test recordings negative for the missed class but carrying at least one abnormal label. Cells with fewer than five missed recordings were not analysed. Proportions were computed for each seed with that seed's thresholds and averaged over seeds.
 
@@ -127,7 +127,7 @@ def table_s4():
                       "Classes": cc.classes.str.replace("morphology", "non-rhythm"), "Cells": cc.n, "Pearson r": cc.r,
                       "Agreement": cc.agree, "Gwet AC1": cc.ac1, "Cohen kappa": cc.kappa})
     return ("*Between models within a cohort*\n\n" + _md(a) + "\n\n*Between cohorts within a model*\n\n" + _md(b)
-            + "\n\nCohen's kappa is close to zero for the non-rhythm classes although agreement is high, because almost no non-rhythm cell is sufficient (the prevalence paradox of kappa); Gwet's AC1 is reported in the main text for this reason.")
+            + "\n\nAgreement, Gwet's AC1 and Cohen's kappa refer to the two-category classification (sufficient versus not). For the non-rhythm classes almost no cell is sufficient, so two-category agreement is high by construction and kappa is close to zero; the main text therefore reports the three-category agreement (sufficient, indeterminate, loss) given in Table S9.")
 
 
 def table_s5():
@@ -177,11 +177,11 @@ TRIPOD = [
     ("Methods: participants", "6c", "Not applicable"),
     ("Methods: data preparation", "7", "Sections 2.1 and 2.3; Supplementary S1 and S2"),
     ("Methods: outcome", "8a", "Section 2.2; Table 2"),
-    ("Methods: outcome", "8b", "Labels are those assigned by the source institutions; see Section 4.7"),
+    ("Methods: outcome", "8b", "Labels are those assigned by the source institutions; see Section 4.6"),
     ("Methods: outcome", "8c", "Not applicable (retrospective labels)"),
     ("Methods: predictors", "9a", "Sections 2.3 and 2.4; Supplementary S2"), ("Methods: predictors", "9b", "Sections 2.3 and 2.4; Supplementary S2"),
     ("Methods: predictors", "9c", "Not applicable"),
-    ("Methods: sample size", "10", "Section 2.1 (all available recordings used); Section 4.8 (classes with few positives)"),
+    ("Methods: sample size", "10", "Section 2.1 (all available recordings used); Section 4.7 (classes with few positives)"),
     ("Methods: missing data", "11", "Section 2.1; Table S1 (no missing signal values; excluded recordings listed)"),
     ("Methods: analytical methods", "12a", "Section 2.3"), ("Methods: analytical methods", "12b", "Section 2.4; Supplementary S2"),
     ("Methods: analytical methods", "12c", "Section 2.5"), ("Methods: analytical methods", "12d", "Sections 2.6 and 3.4 (between cohorts)"),
@@ -189,7 +189,7 @@ TRIPOD = [
     ("Methods: analytical methods", "12g", "Section 2.4 (seed ensemble)"),
     ("Methods: class imbalance", "13", "Section 2.4; Supplementary S2 (class-weighted loss)"),
     ("Methods: fairness", "14", "Not addressed"), ("Methods: model output", "15", "Section 2.6; Supplementary S2"),
-    ("Methods: training vs evaluation", "16", "Section 2.1; Section 4.7"),
+    ("Methods: training vs evaluation", "16", "Section 2.1; Section 4.6"),
     ("Methods: ethical approval", "17", "Declarations, ethics statement (public de-identified data)"),
     ("Open science", "18a", "Declarations"), ("Open science", "18b", "Declarations"),
     ("Open science", "18c", "No protocol was prepared"), ("Open science", "18d", "Not registered"),
@@ -200,9 +200,9 @@ TRIPOD = [
     ("Results: model specification", "22", "Section 2.4; Supplementary S2; code repository"),
     ("Results: model performance", "23a", "Section 3; Table 3; Table S2; archived cell-level results (Zenodo)"),
     ("Results: model performance", "23b", "Section 3.4; Table S4"), ("Results: model updating", "24", "Not applicable"),
-    ("Discussion: interpretation", "25", "Sections 4.1 to 4.5"), ("Discussion: limitations", "26", "Section 4.8"),
-    ("Discussion: usability", "27a", "Section 4.8 (wearable recordings)"), ("Discussion: usability", "27b", "Not applicable"),
-    ("Discussion: usability", "27c", "Sections 4.4 and 4.8"),
+    ("Discussion: interpretation", "25", "Sections 4.1 to 4.5"), ("Discussion: limitations", "26", "Section 4.7"),
+    ("Discussion: usability", "27a", "Section 4.7 (wearable recordings)"), ("Discussion: usability", "27b", "Not applicable"),
+    ("Discussion: usability", "27c", "Sections 4.4 and 4.7"),
 ]
 
 
@@ -224,7 +224,12 @@ def table_s7():
                      "Twelve-lead AUPRC": f"{a.loc['I', 'auprc_ceiling']:.2f}",
                      "Gap(I) − gap(II) [95% CI]": _ci(r.d_I_II, r.d_I_II_lo, r.d_I_II_hi),
                      "Gap(I) − gap(aVF) [95% CI]": _ci(r.d_I_aVF, r.d_I_aVF_lo, r.d_I_aVF_hi)})
-    return _md(pd.DataFrame(rows))
+    rr = pd.read_csv(REV / "af_rr_only.csv")
+    rows2 = [{"Cohort": NAMES[r.cohort], "Input": f"RR intervals of lead {r.model[3:-1]} only",
+              "AUPRC": f"{r.auprc:.2f}", "Twelve-lead AUPRC (SE-ResNet)": f"{r.auprc_seresnet_12:.2f}",
+              "Gap to SE-ResNet twelve-lead [95% CI]": _ci(r.gap_vs_seresnet_12, r.gap_lo, r.gap_hi)}
+             for r in rr.itertuples()]
+    return _md(pd.DataFrame(rows)) + "\n\n" + _md(pd.DataFrame(rows2))
 
 
 def table_s8():
@@ -257,11 +262,19 @@ def table_s9():
                      "Spearman ρ between architectures (range over cohorts)":
                          _num(f"{sp.loc[cl, 'min']:.2f} to {sp.loc[cl, 'max']:.2f}")})
     v = pd.read_csv(REV / "variance_decomposition.csv", index_col=0)
-    names = {"cls": "Class", "lead": "Lead", "cls:lead": "Class × lead", "cohort": "Cohort",
-             "arch": "Architecture", "Residual": "Residual"}
+    names = {"cls": "Class", "lead": "Lead", "cls:lead": "Class × lead", "cls:cohort": "Class × cohort",
+             "cohort": "Cohort", "arch": "Architecture", "Residual": "Residual"}
     vd = pd.DataFrame([{"Source": names[i], "Share of variance": f"{100 * v.loc[i, 'share']:.1f}%"}
-                       for i in ["cls", "cls:lead", "lead", "cohort", "arch", "Residual"]])
-    return _md(pd.DataFrame(rows)) + "\n\n" + _md(vd)
+                       for i in ["cls", "cls:lead", "cls:cohort", "lead", "cohort", "arch", "Residual"]])
+    og = pd.read_csv(REV / "ordinal_agreement.csv")
+    og["kind"] = np.where(og.comparison == "architectures", "Between architectures (4 cohorts)",
+                          "Between cohorts (6 pairs × 2 architectures)")
+    agg = og.groupby("kind").agg(ex_lo=("exact", "min"), ex_hi=("exact", "max"), k_lo=("kappa_linear", "min"),
+                                 k_hi=("kappa_linear", "max"), a_lo=("ac2_linear", "min"), a_hi=("ac2_linear", "max"))
+    oa = pd.DataFrame([{"Comparison": k, "Exact agreement": f"{100 * r.ex_lo:.0f}% to {100 * r.ex_hi:.0f}%",
+                        "Linear-weighted κ": f"{r.k_lo:.2f} to {r.k_hi:.2f}", "Gwet's AC2 (linear)": f"{r.a_lo:.2f} to {r.a_hi:.2f}"}
+                       for k, r in agg.iterrows()])
+    return _md(pd.DataFrame(rows)) + "\n\n" + _md(vd) + "\n\n" + _md(oa)
 
 
 def table_s10():
@@ -299,8 +312,7 @@ def table_s11():
     txt = (f"Choosing the best lead on the test set underestimated its AUPRC gap by a median of "
            f"{opt.median():.3f} (interquartile range {opt.quantile(.25):.3f} to {opt.quantile(.75):.3f}) when the lead "
            f"was chosen on one random half of the test set and evaluated on the other (200 splits, deep learning models). "
-           f"The joint probability of the three matches in the table above, assuming independence, is "
-           f"{p_all:.1e}; the lead sets were named from the criteria, but the test was defined after the results were known.")
+           f"The lead sets were named from the criteria, but the test was defined after the results were known.")
     return _md(pd.DataFrame(rows)) + "\n\n" + _md(pd.DataFrame(rows2)) + "\n\n" + txt
 
 
@@ -318,22 +330,22 @@ def main():
         table_s3(),
         "## Table S4. Agreement between models and between cohorts", table_s4(),
         "## Table S5. Behaviour of single-lead models on missed diagnoses",
-        "For single-lead cells classified as a loss: proportion of missed positive recordings that the model reported as another abnormal class absent from the recording, against the same proportion in random abnormal recordings negative for the missed class (Section 2.6; Supplementary S2).",
+        "For single-lead cells classified as a loss: proportion of missed positive recordings that the model reported as another abnormal class absent from the recording, against the same proportion in random abnormal recordings negative for the missed class (Supplementary S2). Because the comparison recordings are themselves abnormal, the excess measures redirection towards a different diagnosis, not the separation of abnormal from normal recordings; it exceeded chance in most Ningbo cells but in a minority of cells in the other cohorts.",
         table_s5(),
         "## Table S6. Broad label definition",
         "Single-lead sufficiency under the primary and the broad label definitions (Table 2) for the classes whose definition differs (SE-ResNet).",
         table_s6(),
         "## Table S7. Lead I against leads II and aVF for atrial fibrillation",
-        "Absolute AUPRC of the single-lead models and paired bootstrap difference of their AUPRC gaps to the twelve-lead model (1 000 resamples; a positive value means a larger loss on lead I). Ningbo does not code atrial fibrillation.",
+        "Top: absolute AUPRC of the single-lead models and paired bootstrap difference of their AUPRC gaps to the twelve-lead model of the same family (1 000 resamples; a positive value means a larger loss on lead I). Bottom: gradient-boosted trees on the ten RR-interval features of one lead only (five seeds, averaged), compared with the SE-ResNet twelve-lead model. Ningbo does not code atrial fibrillation.",
         table_s7(),
         "## Table S8. Model noise floor from information-equivalent lead sets",
         "Leads I and II determine the six limb leads, and leads I, II and V2 determine leads I, II, III and V2, so differences between these pairs reflect training and optimization rather than information. Deep learning models, all classes and cohorts; gap difference: difference between the AUPRC gaps of the two sets (seed ensembles, mean over paired bootstrap resamples).",
         table_s8(),
         "## Table S9. Agreement of the lead ranking within each class",
-        "Kendall's W: agreement of the ranking of the twelve single-lead gaps across the cohorts in which the class is available. Spearman ρ: agreement of the ranking between the two architectures within a cohort. Variance decomposition: two-way analysis of variance of the single-lead gaps of both architectures.",
+        "Top: Kendall's W, agreement of the ranking of the twelve single-lead gaps across the cohorts in which the class is available; Spearman ρ, agreement of the ranking between the two architectures within a cohort. Middle: share of the variance of the single-lead gaps (both architectures, 1 008 cells) explained by each term of a linear model with class, lead, class × lead, class × cohort, cohort and architecture (type II sums of squares). Bottom: agreement of the three-category sufficiency classification (sufficient, indeterminate, loss) over the 60 non-rhythm single-lead cells of each comparison, treating the categories as ordered.",
         table_s9(),
         "## Table S10. Consistency of rhythm labels with the signal",
-        "Test recordings. Heart rate from the median RR interval of R peaks detected in lead II (NeuroKit2); regular: not labelled atrial fibrillation or flutter. SB, sinus bradycardia; ST, sinus tachycardia; SR, sinus rhythm; morphological diagnosis: left axis deviation, right bundle branch block, left ventricular hypertrophy, T-wave change or ST-T change; SR rows restricted to regular recordings with a rate of 60 to 100/min.",
+        "Test recordings. Heart rate from the median RR interval of R peaks detected in lead II (NeuroKit2); regular: not labelled atrial fibrillation or flutter. SB, sinus bradycardia; ST, sinus tachycardia; SR, sinus rhythm; morphological diagnosis: left axis deviation, right bundle branch block, left ventricular hypertrophy, T-wave change or ST-T change. Denominators: columns 2 and 4, recordings carrying the label; columns 3 and 5, regular recordings meeting the rate criterion; columns 6 and 7, regular recordings with a rate of 60 to 100/min with or without a morphological diagnosis.",
         table_s10(),
         "## Table S11. Further robustness checks",
         "Top: sufficiency on the prevalence-normalized AUPRC scale, (AUPRC − π)/(1 − π) with π the test-set prevalence, against the primary scale (deep learning models, margin 0.05 on both scales). Bottom: whether the best single lead (SE-ResNet) falls among the leads used by the diagnostic criteria (axis: I, II, aVF; right bundle branch block: V1, V2 and the terminal S wave in I and V6; left ventricular hypertrophy: Sokolow-Lyon V1, V5, V6 and Cornell aVL, V3), with the binomial probability of at least as many matches if the best lead were chosen at random.",
