@@ -31,13 +31,14 @@ OUT = C.FIGURES / "v2"
 
 INK, INK2, MUTED = "#0b0b0b", "#52514e", "#8a8984"
 STATE = {"sufficient": ("#2a78d6", "✓"), "indeterminate": ("#f0efec", ""),
-         "loss": ("#e34948", "✕"), "na": ("#ffffff", "–")}
+         "loss": ("#e34948", "✕"), "na": ("#ffffff", "–"), "ceiling": ("#ffffff", "")}
 COHORT = {"chapman": ("Chapman", "#2a78d6", "o"), "ningbo": ("Ningbo", "#eb6834", "s"),
           "georgia": ("Georgia", "#1baf7a", "^"), "ptbxl_snomed": ("PTB-XL", "#eda100", "D")}
 GROUPS = [("Rhythm", ["SR", "SB", "ST", "AF", "AFL", "SVT"]), ("Axis", ["LAD"]),
           ("Conduction", ["RBBB"]), ("Hypertrophy", ["LVH"]), ("Repolarization", ["TWC", "STTC"])]
 RHYTHM = ["SR", "SB", "ST", "AF", "AFL", "SVT"]
 DEVICES = [("I+II", "I, II"), ("LIMB6", "Limb 6"), ("CH3", "I, II, V2"), ("CH4", "I, II, III, V2")]
+LATERAL = [("I+V1", "I, V1"), ("I+V5", "I, V5"), ("II+V5", "II, V5")]      # limb + chest lead sets
 
 plt.rcParams.update({"font.size": 7, "axes.titlesize": 8, "axes.labelsize": 7,
                      "xtick.labelsize": 6.5, "ytick.labelsize": 6.5, "axes.edgecolor": MUTED,
@@ -53,37 +54,56 @@ def _save(fig, name):
     print("wrote", OUT / name)
 
 
+def _auprc_txt(v):
+    """AUPRC printed in a map cell: two decimals without the leading zero."""
+    return "1.0" if v >= 0.995 else f"{v:.2f}"[1:]
+
+
 def fig2(arch="seresnet"):
+    """Sufficiency map; each cell carries the absolute AUPRC of its configuration, and the first
+    column the twelve-lead AUPRC.  Besides colour, the state is marked by the corner glyph."""
     cells = pd.read_csv(AGG / "cells.csv")
     cells = cells[cells.arch == arch]
     cohorts = [ds for ds in COHORT if (cells.cohort == ds).any()]
     has_dev = (cells.kind == "device").any()
-    cols = list(C.LEADS) + ([None] + [d for d, _ in DEVICES] if has_dev else [])
-    xlab = list(C.LEADS) + ([""] + [lab for _, lab in DEVICES] if has_dev else [])
+    has_lat = cells.spec.isin([d for d, _ in LATERAL]).any()
+    cols = ["ALL", None] + list(C.LEADS) + ([None] + [d for d, _ in DEVICES] if has_dev else []) \
+        + ([None] + [d for d, _ in LATERAL] if has_lat else [])
+    xlab = ["12 leads", ""] + list(C.LEADS) + ([""] + [lab for _, lab in DEVICES] if has_dev else []) \
+        + ([""] + [lab for _, lab in LATERAL] if has_lat else [])
+    x0_single = 2
     rows, ypos, y = [], [], 0.0
     for gname, classes in GROUPS:
         for cl in classes:
             rows.append((gname, cl)); ypos.append(y); y += 1
         y += 0.45                                          # gap between diagnostic groups
     nr = 2 if len(cohorts) > 2 else 1
-    fig, axes = plt.subplots(nr, 2, figsize=(7.1, 3.1 * nr + 0.4 * (nr == 1)))
+    fig, axes = plt.subplots(nr, 2, figsize=(7.48, 3.3 * nr + 0.4 * (nr == 1)))
     for ax, ds in zip(np.atleast_1d(axes).ravel(), cohorts):
         g = cells[cells.cohort == ds]
-        st = {(r.spec, r.cls): r.sufficiency for r in g.itertuples()}
+        st = {(r.spec, r.cls): (r.sufficiency, r.auprc) for r in g.itertuples()}
         ce = g[g.kind == "ceiling"]
         low = {r.cls: C.flag(ds, r.cls, r.low_ceiling, r.n_pos_test) for r in ce.itertuples()}
         for (gname, cl), yy in zip(rows, ypos):
             for xi, sp in enumerate(cols):
                 if sp is None:
                     continue
-                s = st.get((sp, cl), "na")
-                s = "na" if not isinstance(s, str) else s
-                face, glyph = STATE[s]
-                ax.add_patch(Rectangle((xi + 0.06, yy + 0.06), 0.88, 0.88, facecolor=face,
-                                       edgecolor="#d9d8d4" if s == "na" else "none", lw=0.4))
+                s_, v = st.get((sp, cl), ("na", np.nan))
+                if sp == "ALL":
+                    s_ = "na" if not np.isfinite(v) else "ceiling"
+                s_ = "na" if not isinstance(s_, str) else s_
+                face, glyph = STATE.get(s_, ("#ffffff", ""))
+                ax.add_patch(Rectangle((xi + 0.04, yy + 0.06), 0.92, 0.88, facecolor=face,
+                                       edgecolor="#d9d8d4" if s_ in ("na", "ceiling") else "none", lw=0.4))
+                if s_ == "na":
+                    ax.text(xi + 0.5, yy + 0.53, "–", ha="center", va="center", fontsize=5, color=MUTED)
+                    continue
+                on_dark = s_ in ("sufficient", "loss")
+                ax.text(xi + 0.5, yy + 0.56, _auprc_txt(v), ha="center", va="center", fontsize=4.4,
+                        color="white" if on_dark else INK, fontweight="bold" if on_dark else "normal")
                 if glyph:
-                    ax.text(xi + 0.5, yy + 0.53, glyph, ha="center", va="center", fontsize=5.5,
-                            color="white" if s in ("sufficient", "loss") else MUTED)
+                    ax.text(xi + 0.93, yy + 0.13, glyph, ha="right", va="top", fontsize=2.9,
+                            color="white")
         ax.set_xlim(-0.1, len(cols) + 0.1); ax.set_ylim(y - 0.35, -1.05)
         ax.set_xticks([i + 0.5 for i, c in enumerate(cols) if c is not None])
         ax.set_xticklabels([l for l, c in zip(xlab, cols) if c is not None], rotation=90)
@@ -93,9 +113,12 @@ def fig2(arch="seresnet"):
         for sp_ in ax.spines.values():
             sp_.set_visible(False)
         ax.set_title(COHORT[ds][0], loc="left", color=INK, fontweight="bold", pad=4)
-        ax.text(6, -0.45, "Single leads", ha="center", fontsize=6.5, color=INK2)
+        ax.text(x0_single + 6, -0.45, "Single leads", ha="center", fontsize=6.5, color=INK2)
         if has_dev:
-            ax.text(len(C.LEADS) + 3, -0.45, "Reduced lead sets", ha="center", fontsize=6.5, color=INK2)
+            ax.text(x0_single + len(C.LEADS) + 3, -0.45, "Device sets", ha="center", fontsize=5.5, color=INK2)
+        if has_lat:
+            ax.text(x0_single + len(C.LEADS) + len(DEVICES) + 3.5, -0.45, "Limb + chest", ha="center",
+                    fontsize=5.5, color=INK2)
         yg = 0.0
         for gname, classes in GROUPS:                       # group labels on the right
             ax.text(len(cols) + 0.25, yg + len(classes) / 2, gname, va="center", fontsize=6,
@@ -104,7 +127,7 @@ def fig2(arch="seresnet"):
     handles = [Patch(facecolor=STATE[k][0], edgecolor="#d9d8d4" if k == "na" else "none",
                      label=lab) for k, lab in (("sufficient", "Sufficient (✓)"),
                                               ("indeterminate", "Indeterminate"),
-                                              ("loss", "Loss (✕)"), ("na", "Not available"))]
+                                              ("loss", "Loss (✕)"), ("na", "Not available (–)"))]
     fig.legend(handles=handles, loc="lower center", ncol=4, frameon=False, fontsize=7,
                bbox_to_anchor=(0.5, -0.01))
     fig.tight_layout(rect=(0, 0.03 if nr == 2 else 0.08, 1, 1), w_pad=2.5, h_pad=1.5)
@@ -203,8 +226,9 @@ def fig1():
     arrow(24.6, 26.6)
     box(27, 1.5, 22, 36.5, "Lead configurations", [
         "12 single leads", "  I, II, III, aVR, aVL, aVF,", "  V1 to V6",
-        "4 reduced lead sets", "  I+II; six limb leads;", "  I, II, V2; I, II, III, V2",
-        "Twelve-lead reference", "", "11 classes in 5 groups", "  rhythm, axis, conduction,",
+        "4 device lead sets", "  I+II; six limb leads;", "  I, II, V2; I, II, III, V2",
+        "3 limb + chest sets", "  I+V1; I+V5; II+V5",
+        "Twelve-lead reference", "11 classes in 5 groups", "  rhythm, axis, conduction,",
         "  hypertrophy, repolarization"])
     arrow(49.6, 52.2)
     box(52.6, 1.5, 20.5, 36.5, "Models", [
@@ -215,7 +239,7 @@ def fig1():
 
     ax.text(76.5, 40.5, "Sufficiency criterion", fontsize=7.5, fontweight="bold", color=INK, va="top")
     ax.text(76.5, 37.2, "AUPRC gap to the twelve-lead model", fontsize=6.3, color=INK2, va="top")
-    ax.text(76.5, 34.6, "with 95% bootstrap interval", fontsize=6.3, color=INK2, va="top")
+    ax.text(76.5, 34.6, "with 95% bootstrap interval (seeds, records)", fontsize=6.3, color=INK2, va="top")
     x0, x1 = 78, 98                                   # mini axis: gap 0 .. 0.15
     gx = lambda g: x0 + (g + 0.02) / 0.17 * (x1 - x0)
     ax.plot([gx(0), gx(0)], [8, 30], color="#d9d8d4", lw=0.6)
@@ -253,7 +277,7 @@ def graphical_abstract():
              "Sufficient: 95% CI of the AUPRC loss", "entirely below 0.05"]
     for i, t in enumerate(lines):
         fig.text(0.02, 0.72 - i * 0.075, t, fontsize=8, color=INK2)
-    fig.text(0.02, 0.05, "Rate rhythms: any lead*.\nAF: lead I falls short (CNNs).\nOther diagnoses: the closest lead\nfollows lead-vector physiology.",
+    fig.text(0.02, 0.05, "Rate rhythms: any lead*.\nAF: detected well from every lead.\nOther diagnoses: the closest lead\nfollows lead-vector physiology.",
              fontsize=8, color=INK, linespacing=1.4)
 
     ax = fig.add_axes([0.43, 0.14, 0.44, 0.74])
@@ -277,7 +301,7 @@ def graphical_abstract():
         if r0 < len(order):
             ax.axhline(r0 - 0.05, color="white", lw=2)
     ax.text(0, len(order) + 0.9, "Cohorts in which the single lead was sufficient (SE-ResNet; of 4, AF and AFL of 3).\n"
-            "*SR and SB fall short in one cohort each, where the label is inconsistent with the signal.",
+            "*Nearly every lead; SR and SB fall short where the label is inconsistent with the signal.",
             fontsize=6, color=INK2, va="top")
     _save(fig, "graphical_abstract")
 

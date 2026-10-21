@@ -41,7 +41,7 @@ from sklearn.metrics import average_precision_score, roc_auc_score
 
 from . import config as C
 from .concordance import MORPH, cohen_kappa
-from .evaluate import AUROC_INVIS, FDR_ALPHA, GAP_FLAG, bh_fdr, bootstrap_all
+from .evaluate import AUROC_INVIS, FDR_ALPHA, GAP_FLAG, N_BOOT, bh_fdr, bootstrap_all
 from .run_grid import SEEDS, specs_for
 from .train import atomic_save
 
@@ -67,9 +67,48 @@ def sufficiency(lo, hi, margin):
     return "sufficient" if hi < margin else "loss" if lo > margin else "indeterminate"
 
 
+def spec_key(spec):
+    """Stable integer for a lead configuration, used to give it its own random stream."""
+    import zlib
+    return zlib.crc32(spec.encode())
+
+
+def two_level_bootstrap(P, y, specs, seed=C.SEED):
+    """Gap CI that includes training variability: in each resample the test records are drawn
+    with replacement and, independently for the twelve-lead model and each configuration (separate
+    training runs), the seeds are drawn with replacement and their predictions re-averaged.
+    P: spec -> (seeds, n, K).  Returns ci_lo, ci_hi, p (one-sided, H0: gap <= 0), each (specs, K).
+    The record resamples of a class come from one stream shared by all configurations (paired design),
+    the seed draws of each configuration from its own stream, so a cell's interval does not depend on
+    which other configurations are analysed."""
+    from .review_analyses import ap
+    S, n, K = P["ALL"].shape
+    lo, hi, pv = (np.full((len(specs), K), np.nan) for _ in range(3))
+    for j in range(K):
+        if y[:, j].sum() == 0:
+            continue
+        rec = np.random.default_rng([seed, j])
+        sd = {sp: np.random.default_rng([seed, j, spec_key(sp)]) for sp in ["ALL"] + list(specs)}
+        G = np.full((N_BOOT, len(specs)), np.nan)
+        for b in range(N_BOOT):
+            r = rec.integers(0, n, n)
+            draws = {sp: g.integers(0, S, S) for sp, g in sd.items()}    # drawn every resample
+            yy = y[r, j]
+            if yy.sum() == 0 or yy.sum() == n:
+                continue
+            c = ap(yy, P["ALL"][draws["ALL"]][:, r, j].mean(0))
+            G[b] = [c - ap(yy, P[sp][draws[sp]][:, r, j].mean(0)) for sp in specs]
+        for i in range(len(specs)):
+            d = G[:, i][np.isfinite(G[:, i])]
+            if len(d):
+                lo[i, j], hi[i, j] = np.percentile(d, [2.5, 97.5])
+                pv[i, j] = (1 + np.sum(d <= 0)) / (len(d) + 1)
+    return lo, hi, pv
+
+
 def _complete_seeds(ds, arch):
     """Seeds whose every lead spec finished (gbm has no device specs)."""
-    need = SINGLES + ["ALL"] if arch == "gbm" else SPECS
+    need = SINGLES + ["ALL"] + C.LATERAL_SPECS if arch == "gbm" else SPECS
     out = []
     for s in SEEDS:
         m = C.ds_paths(ds, arch, s).metrics
@@ -94,7 +133,7 @@ def aggregate_one(args):
     out = out_dir / ds / arch / "ensemble.npz"
     if out.exists() and not force:
         old = np.load(out, allow_pickle=True)
-        if list(old["seeds"]) == seeds:
+        if list(old["seeds"]) == seeds and "ci_lo_rec" in old.files:
             return out
     unavailable = [C.CLASSES.index(c) for c in C.UNAVAILABLE.get(ds, [])]
 
@@ -126,10 +165,12 @@ def aggregate_one(args):
     gap_sd = seed_gap.std(axis=0, ddof=1) if len(seeds) > 1 else np.full(gap.shape, np.nan)
 
     others = [sp for sp in specs if sp != "ALL"]
-    lo, hi, pval = bootstrap_all(ens, others)                  # (len(others), K)
-    ci_lo, ci_hi, pv = (np.full(gap.shape, np.nan) for _ in range(3))
+    lo, hi, pval = two_level_bootstrap({sp: np.stack(P[sp]) for sp in specs}, y, others)
+    lo_r, hi_r, _ = bootstrap_all(ens, others)                 # record-only (sensitivity)
+    ci_lo, ci_hi, pv, ci_lo_rec, ci_hi_rec = (np.full(gap.shape, np.nan) for _ in range(5))
     rows_o = [specs.index(sp) for sp in others]
     ci_lo[rows_o], ci_hi[rows_o], pv[rows_o] = lo, hi, pval
+    ci_lo_rec[rows_o], ci_hi_rec[rows_o] = lo_r, hi_r
 
     # FDR over the 12 x 11 single-lead family (as in study 1); devices get their own family
     q = np.full(gap.shape, np.nan)
@@ -138,7 +179,7 @@ def aggregate_one(args):
         if r:
             q[r] = bh_fdr(pv[r].ravel()).reshape(len(r), K)
 
-    for arr in (auprc, auroc, gap, rel, gap_sd, ci_lo, ci_hi, pv, q):
+    for arr in (auprc, auroc, gap, rel, gap_sd, ci_lo, ci_hi, pv, q, ci_lo_rec, ci_hi_rec):
         arr[:, unavailable] = np.nan
     blind = (gap > GAP_FLAG) & (q < FDR_ALPHA)
     typ = np.where(~blind, "ok", np.where(auroc < AUROC_INVIS, "A_invisible", "B_confusion"))
@@ -147,7 +188,8 @@ def aggregate_one(args):
     atomic_save(out, lambda t: np.savez(
         t, specs=np.array(specs), classes=np.array(C.CLASSES), seeds=np.array(seeds),
         auprc=auprc, auroc=auroc, ceil=ceil, gap=gap, rel_gap=rel, gap_sd=gap_sd,
-        ci_lo=ci_lo, ci_hi=ci_hi, p=pv, q=q, blind=blind, type=typ,
+        ci_lo=ci_lo, ci_hi=ci_hi, ci_lo_rec=ci_lo_rec, ci_hi_rec=ci_hi_rec, p=pv, q=q,
+        blind=blind, type=typ,
         n_pos_test=y.sum(0)))
     print(f"[{ds}/{arch}] seeds={seeds} blind singles={int(blind[:12].sum())}", flush=True)
     return out
@@ -206,6 +248,7 @@ def main(force=False, jobs=4, cohorts=None, archs=None, out_dir=OUT):
                                  auprc=e["auprc"][i, j], auprc_ceiling=e["ceil"][j],
                                  auroc=e["auroc"][i, j], gap=e["gap"][i, j], rel_gap=e["rel_gap"][i, j],
                                  gap_ci_lo=e["ci_lo"][i, j], gap_ci_hi=e["ci_hi"][i, j],
+                                 gap_ci_lo_rec=e["ci_lo_rec"][i, j], gap_ci_hi_rec=e["ci_hi_rec"][i, j],
                                  gap_seed_sd=e["gap_sd"][i, j], q=e["q"][i, j],
                                  blind=bool(e["blind"][i, j]), type=str(e["type"][i, j])))
     cells = pd.DataFrame(rows)
@@ -217,6 +260,7 @@ def main(force=False, jobs=4, cohorts=None, archs=None, out_dir=OUT):
         cells[f"suff_rel{m:g}"] = [sufficiency(lo / c, hi / c, m) if c > 0 else "na" for lo, hi, c
                                    in zip(cells.gap_ci_lo, cells.gap_ci_hi, cells.auprc_ceiling)]
     cells["sufficiency"] = cells[f"suff_abs{MARGIN:g}"]
+    cells["sufficiency_rec"] = [sufficiency(lo, hi, MARGIN) for lo, hi in zip(cells.gap_ci_lo_rec, cells.gap_ci_hi_rec)]
     atomic_save(OUT / "cells.csv", lambda t: cells.to_csv(t, index=False, float_format="%.4f"))
 
     # per class and cohort x arch: how many single leads are sufficient, and which

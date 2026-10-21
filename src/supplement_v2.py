@@ -12,9 +12,14 @@ artifacts_v2/aggregate*/ so that every number is traceable.
   Tables S7-S10  lead I vs II/aVF for AF, noise floor from equivalent lead sets, within-class ranking
                  agreement and variance decomposition, label consistency (artifacts_v2/review/)
   Table S11  prevalence-normalized sufficiency, test-set selection optimism, physiological lead match
+  Table S12  frontal QRS axis against the left axis deviation labels; PTB-XL heart_axis field and the
+             LAD gaps on records with a coded axis (artifacts_v2/review2/)
+  Table S13  atrial fibrillation operating points (sensitivity at fixed specificity)
+  Table S14  two-level against record-only bootstrap intervals
+  Table S15  preregistered predictions for the limb + chest lead sets, confirmed or not
   Figures S1-S2 captions, TRIPOD+AI checklist
 
-Run:  python -m src.supplement_v2     -> submission_cibm/supplementary.md
+Run:  python -m src.supplement_v2     -> submission_bspc/supplementary.md
 """
 import numpy as np
 import pandas as pd
@@ -23,7 +28,7 @@ from . import config as C
 from .tables_v2 import NAMES, ORDER, _md, _num
 
 AGG, AGG_B = C.ART_V2 / "aggregate", C.ART_V2 / "aggregate_broad"
-OUT = C.ROOT / "submission_cibm" / "supplementary.md"
+OUT = C.SUBMISSION / "supplementary.md"
 ARCH = {"seresnet": "SE-ResNet", "inceptiontime": "InceptionTime", "gbm": "Feature-based"}
 GROUP_ORDER = ["rhythm", "axis", "conduction", "hypertrophy", "repolarization"]
 
@@ -59,7 +64,11 @@ def s2_text():
 
 *Feature-based model.* Each lead was band-pass filtered (0.5 to 40 Hz, third-order Butterworth, zero phase) and R peaks were detected with NeuroKit2. From each lead we derived ten rhythm features (mean, standard deviation, coefficient of variation, minimum and maximum of the RR interval, root mean square of successive differences, proportion of successive differences above 50 ms, number of beats, median absolute successive difference divided by the mean RR interval, and mean correlation of each beat with the median beat), eleven measurements on the median beat (R and S amplitude and their difference, QRS width, ST level 40 and 80 ms after the J point, maximum, minimum, extreme value and area of the T wave, and P-wave amplitude, all relative to the PR segment), and the median beat resampled to 50 Hz (35 values): 56 features per lead. One LightGBM classifier per class was trained with at most 2 000 trees (learning rate 0.03, 31 leaves, row and column subsampling of 0.8 and 0.5), the positive-class weight above, and early stopping on validation average precision after 100 rounds without improvement.
 
-*Bootstrap.* Within each class and resample, the same recordings were used for every configuration and the twelve-lead model; resamples without a positive recording were discarded, and percentile intervals were used.
+*Bootstrap.* Each of the 1 000 resamples drew the test recordings with replacement and, separately for the twelve-lead model and for the configuration, drew five of the five seeds with replacement and averaged the predictions of the drawn models. The interval therefore includes the variability of model training as well as that of the test set; the two models were resampled independently because they are separate training runs. Within each class and resample, the same recordings were used for every configuration and the twelve-lead model; resamples without a positive recording were discarded, and percentile intervals were used. The feature-based model was trained with one seed, so its intervals reflect the test set only. Intervals from resampling the test recordings alone, as in the previous version of the analysis, are compared in Table S14.
+
+*Frontal QRS axis.* Leads I and II were filtered with the NeuroKit2 ECG cleaning filter, and aVF was derived as II − I/2. Beats were detected as peaks of the magnitude of the frontal vector (I, 2·aVF/√3) at least 300 ms apart, because lead II alone is nearly isoelectric when the axis is close to −30°. The median beat of I and aVF from −200 to +250 ms around the peaks was corrected to the median of the PR segment (120 to 70 ms before the peak), the QRS complex was taken as the contiguous interval around the peak in which the vector magnitude exceeded 15% of its peak value, and the axis was computed from the net QRS areas as atan2(2·aVF/√3, I). Recordings with fewer than three beats or no QRS boundary within 220 ms were not assigned an axis (3% to 5% of test recordings).
+
+*Operating points.* For atrial fibrillation, the sensitivity at a fixed specificity of 0.90 and 0.95 was read from the test-set ROC curve of each seed ensemble, with two-level bootstrap intervals.
 
 *Behaviour on missed diagnoses.* A decision threshold was set for each class on the validation set by maximizing the F1 score over thresholds from 0.05 to 0.95. A positive recording was missed when its predicted probability was below the threshold. Abnormal classes were all classes except sinus rhythm; a second proportion considered only non-rhythm classes. The expected proportion was estimated from 1 000 random samples, of equal size, of test recordings negative for the missed class but carrying at least one abnormal label. Cells with fewer than five missed recordings were not analysed. Proportions were computed for each seed with that seed's thresholds and averaged over seeds.
 
@@ -184,7 +193,7 @@ TRIPOD = [
     ("Methods: sample size", "10", "Section 2.1 (all available recordings used); Section 4.7 (classes with few positives)"),
     ("Methods: missing data", "11", "Section 2.1; Table S1 (no missing signal values; excluded recordings listed)"),
     ("Methods: analytical methods", "12a", "Section 2.3"), ("Methods: analytical methods", "12b", "Section 2.4; Supplementary S2"),
-    ("Methods: analytical methods", "12c", "Section 2.5"), ("Methods: analytical methods", "12d", "Sections 2.6 and 3.4 (between cohorts)"),
+    ("Methods: analytical methods", "12c", "Section 2.5"), ("Methods: analytical methods", "12d", "Sections 2.6 and 3.5 (between cohorts)"),
     ("Methods: analytical methods", "12e", "Sections 2.5 and 2.6"), ("Methods: analytical methods", "12f", "Not applicable"),
     ("Methods: analytical methods", "12g", "Section 2.4 (seed ensemble)"),
     ("Methods: class imbalance", "13", "Section 2.4; Supplementary S2 (class-weighted loss)"),
@@ -199,7 +208,7 @@ TRIPOD = [
     ("Results: participants", "20c", "Table 2"), ("Results: model development", "21", "Tables 1 and 2"),
     ("Results: model specification", "22", "Section 2.4; Supplementary S2; code repository"),
     ("Results: model performance", "23a", "Section 3; Table 3; Table S2; archived cell-level results (Zenodo)"),
-    ("Results: model performance", "23b", "Section 3.4; Table S4"), ("Results: model updating", "24", "Not applicable"),
+    ("Results: model performance", "23b", "Section 3.5; Table S4"), ("Results: model updating", "24", "Not applicable"),
     ("Discussion: interpretation", "25", "Sections 4.1 to 4.5"), ("Discussion: limitations", "26", "Section 4.7"),
     ("Discussion: usability", "27a", "Section 4.7 (wearable recordings)"), ("Discussion: usability", "27b", "Not applicable"),
     ("Discussion: usability", "27c", "Sections 4.4 and 4.7"),
@@ -316,6 +325,84 @@ def table_s11():
     return _md(pd.DataFrame(rows)) + "\n\n" + _md(pd.DataFrame(rows2)) + "\n\n" + txt
 
 
+REV2 = C.ART_V2 / "review2"
+
+
+def table_s12():
+    a = pd.read_csv(REV2 / "axis_label_agreement.csv")
+    t1 = pd.DataFrame({"Cohort": a.cohort.map(NAMES), "LAD-labelled test recordings": a.n_label,
+                       "AUROC of the computed axis for the label": a.auroc_axis.map(lambda v: f"{v:.2f}"),
+                       "Labelled recordings with axis < −30°": (100 * a.rule_given_label).round(0).astype(int).astype(str) + "%",
+                       "Recordings with axis < −30° that are labelled": (100 * a.label_given_rule).round(0).astype(int).astype(str) + "%",
+                       "Recordings with axis ≥ −30° that are labelled": (100 * a.label_given_no_rule).round(1).astype(str) + "%"})
+    f = pd.read_csv(REV2 / "axis_ptbxl_by_field.csv")
+    f = f[f.n >= 50].sort_values("median_axis")
+    t2 = pd.DataFrame({"PTB-XL heart_axis": f.heart_axis.str.replace("missing", "missing (not coded)"),
+                       "Recordings": f.n.astype(int), "LAD label": np.where(f.lad_label > 0.5, "yes", "no"),
+                       "Computed axis, median [IQR]": [_num(f"{m:.0f}° [{q1:.0f}, {q3:.0f}]") for m, q1, q3 in zip(f.median_axis, f.q1, f.q3)],
+                       "Axis < −30°": (100 * f.below_m30).round(0).astype(int).astype(str) + "%"})
+    d = pd.read_csv(REV2 / "axis_ptbxl_by_device.csv")
+    t3 = pd.DataFrame({"PTB-XL device family": d.device, "Recordings": d.n.astype(int),
+                       "heart_axis not coded": (100 * d.field_missing).round(0).astype(int).astype(str) + "%",
+                       "Computed axis < −30°": (100 * d.axis_below_m30).round(0).astype(int).astype(str) + "%",
+                       "LAD label": (100 * d.lad_label).round(0).astype(int).astype(str) + "%"})
+    g = pd.read_csv(REV2 / "axis_ptbxl_coded_gaps.csv")
+    g = g[g.arch != "gbm"]
+    rows = []
+    for (arch, spec), x in g.groupby(["arch", "spec"], sort=False):
+        a_, c_ = x[x.subset == "all"].iloc[0], x[x.subset == "coded"].iloc[0]
+        rows.append({"Model": ARCH[arch], "Configuration": {"LIMB6": "six limb leads", "CH3": "I, II, V2",
+                                                            "CH4": "I, II, III, V2"}.get(spec, spec),
+                     f"All test recordings (n = {a_.n}): gap [95% CI]": _ci(a_.gap, a_.gap_lo, a_.gap_hi) + f" {a_.sufficiency}",
+                     f"Coded heart_axis (n = {c_.n}): gap [95% CI]": _ci(c_.gap, c_.gap_lo, c_.gap_hi) + f" {c_.sufficiency}"})
+    t4 = pd.DataFrame(rows)
+    ceil = g.groupby(["arch", "subset"]).auprc_12.first()
+    note = (f"Twelve-lead AUPRC: SE-ResNet {ceil['seresnet', 'all']:.2f} on all test recordings and "
+            f"{ceil['seresnet', 'coded']:.2f} on those with a coded heart_axis; InceptionTime "
+            f"{ceil['inceptiontime', 'all']:.2f} and {ceil['inceptiontime', 'coded']:.2f}.")
+    return "\n\n".join([_md(t1), _md(t2), _md(t3), _md(t4), note])
+
+
+def table_s13():
+    a = pd.read_csv(REV2 / "af_operating_points.csv")
+    rows = []
+    for (ds, arch), x in a.groupby(["cohort", "arch"], sort=False):
+        x = x.set_index("lead")
+        r = {"Cohort": NAMES[ds], "Model": ARCH[arch]}
+        for sp in (95, 90):
+            k = f"sens_at_spec{sp}"
+            r[f"Sensitivity at specificity 0.{sp}: 12 leads / I / II / aVF"] = " / ".join(
+                f"{x.loc[ld, k]:.2f}" for ld in ("ALL", "I", "II", "aVF"))
+            d = x.loc["I-II"]
+            r[f"Lead I − lead II at 0.{sp} [95% CI]"] = _ci(d[k], d[k + "_lo"], d[k + "_hi"])
+        rows.append(r)
+    return _md(pd.DataFrame(rows))
+
+
+def table_s14():
+    r = pd.read_csv(REV2 / "reclassification.csv")
+    t = pd.DataFrame({"Model": r.arch.map(ARCH), "Configurations": r.kind.map({"single": "single leads", "device": "reduced lead sets"}),
+                      "Cells": r.n.astype(int),
+                      "Same category": [f"{s} ({100 * s / n:.0f}%)" for s, n in zip(r.same.astype(int), r.n)],
+                      "Sufficient, record-only / two-level": [f"{a} / {b}" for a, b in zip(r.n_sufficient_rec.astype(int), r.n_sufficient.astype(int))],
+                      "Sufficient → indeterminate": r.suff_rec_to_indet.astype(int),
+                      "Loss → indeterminate": r.loss_rec_to_indet.astype(int),
+                      "Indeterminate → other": r.indet_rec_to_other.astype(int),
+                      "Median CI width, record-only / two-level": [f"{a:.3f} / {b:.3f}" for a, b in zip(r.median_width_rec, r.median_width)]})
+    return _md(t)
+
+
+def table_s15():
+    p = pd.read_csv(REV2 / "prereg_lateral.csv")
+    cname = lambda t: ", ".join(NAMES.get(x.strip(), x.strip()) for x in str(t).split(","))
+    t = pd.DataFrame({"Prediction": p.prediction, "Class": p["class"], "Claim": p.claim,
+                      "Cohorts evaluated": p.cohorts_evaluated.map(lambda v: v.replace("ptbxl_snomed (coded heart_axis)", "PTB-XL, coded heart_axis") if "coded" in v else cname(v)),
+                      "Cohorts meeting the claim": p.cohorts_meeting.map(lambda v: v if v == "none" else cname(v)),
+                      "Confirmed": p.confirmed})
+    n = int((p.confirmed == "yes").sum())
+    return _md(t) + f"\n\n{n} of {len(p)} predictions were confirmed."
+
+
 def main():
     parts = [
         "# Supplementary material",
@@ -336,7 +423,7 @@ def main():
         "Single-lead sufficiency under the primary and the broad label definitions (Table 2) for the classes whose definition differs (SE-ResNet).",
         table_s6(),
         "## Table S7. Lead I against leads II and aVF for atrial fibrillation",
-        "Top: absolute AUPRC of the single-lead models and paired bootstrap difference of their AUPRC gaps to the twelve-lead model of the same family (1 000 resamples; a positive value means a larger loss on lead I). Bottom: gradient-boosted trees on the ten RR-interval features of one lead only (five seeds, averaged), compared with the SE-ResNet twelve-lead model. Ningbo does not code atrial fibrillation.",
+        "Top: absolute AUPRC of the single-lead models and paired bootstrap difference of their AUPRC gaps to the twelve-lead model of the same family (1 000 two-level resamples; a positive value means a larger loss on lead I). Bottom: gradient-boosted trees on the ten RR-interval features of one lead only (five seeds, averaged), compared with the SE-ResNet twelve-lead model. Ningbo does not code atrial fibrillation.",
         table_s7(),
         "## Table S8. Model noise floor from information-equivalent lead sets",
         "Leads I and II determine the six limb leads, and leads I, II and V2 determine leads I, II, III and V2, so differences between these pairs reflect training and optimization rather than information. Deep learning models, all classes and cohorts; gap difference: difference between the AUPRC gaps of the two sets (seed ensembles, mean over paired bootstrap resamples).",
@@ -350,8 +437,20 @@ def main():
         "## Table S11. Further robustness checks",
         "Top: sufficiency on the prevalence-normalized AUPRC scale, (AUPRC − π)/(1 − π) with π the test-set prevalence, against the primary scale (deep learning models, margin 0.05 on both scales). Bottom: whether the best single lead (SE-ResNet) falls among the leads used by the diagnostic criteria (axis: I, II, aVF; right bundle branch block: V1, V2 and the terminal S wave in I and V6; left ventricular hypertrophy: Sokolow-Lyon V1, V5, V6 and Cornell aVL, V3), with the binomial probability of at least as many matches if the best lead were chosen at random.",
         table_s11(),
+        "## Table S12. Left axis deviation labels and the frontal QRS axis",
+        "First part: agreement of the frontal QRS axis computed from leads I and II (Supplementary S2) with the left axis deviation (LAD) label in each test set; the AUROC uses the negative axis as the score. Second part: PTB-XL, all recordings, by the heart_axis field from which the LAD label of the Challenge release was derived (LAD and ALAD positive; categories with fewer than 50 recordings not shown). Third part: PTB-XL by recording device family. Fourth part: PTB-XL LAD gaps of the reduced lead sets and of the limb leads closest to the axis, on all test recordings and on those whose heart_axis field is coded (seed ensembles, two-level bootstrap). A missing heart_axis was counted as absence of left axis deviation in the label, and the field is missing mainly in recordings from one device family.",
+        table_s12(),
+        "## Table S13. Atrial fibrillation at fixed specificity",
+        "Sensitivity at a specificity of 0.95 and 0.90 for the twelve-lead model and for leads I, II and aVF (seed ensembles; feature-based model one seed), and the difference in sensitivity between lead I and lead II, with two-level bootstrap 95% confidence intervals; a negative difference means that lead I detected fewer recordings. The difference in AUPRC gap between the two leads is given in Table S7. Ningbo does not code atrial fibrillation.",
+        table_s13(),
+        "## Table S14. Two-level against record-only confidence intervals",
+        "Sufficiency classification of the deep learning cells (margin 0.05) with the primary interval, which resamples seeds and test recordings, against the interval from resampling test recordings alone. Arrows give the change from the record-only to the two-level classification; no cell changed between sufficient and loss.",
+        table_s14(),
+        "## Table S15. Preregistered predictions for the limb + chest lead sets",
+        "Predictions recorded before the sets I + V1, I + V5 and II + V5 were trained (PREREGISTRATION_lateral_sets.md in the code archive). A positive claim (sufficient, or a gap smaller than that of leads I + II by the paired two-level bootstrap) holds in a cohort only if it holds for both networks; a negative claim only if it holds for neither. Classes flagged in a cohort (†, ‡) are not counted.",
+        table_s15(),
         "## Figures S1 and S2",
-        "![](../figures/v2/fig2_sufficiency_inceptiontime.png)\n\n**Figure S1.** Diagnostic sufficiency map for InceptionTime (as Figure 2).\n\n![](../figures/v2/fig2_sufficiency_gbm.png)\n\n**Figure S2.** Diagnostic sufficiency map for the feature-based model in Chapman and PTB-XL (single leads only). In PTB-XL, supraventricular tachycardia (three positive test recordings, twelve-lead AUPRC 0.02) appears sufficient on many leads; this illustrates why classes with a twelve-lead AUPRC below 0.50 are flagged rather than interpreted.",
+        "![](../figures/v2/fig2_sufficiency_inceptiontime.png)\n\n**Figure S1.** Diagnostic sufficiency map for InceptionTime (as Figure 2).\n\n![](../figures/v2/fig2_sufficiency_gbm.png)\n\n**Figure S2.** Diagnostic sufficiency map for the feature-based model in Chapman and PTB-XL (single leads and limb + chest sets). In PTB-XL, supraventricular tachycardia (three positive test recordings, twelve-lead AUPRC 0.02) appears sufficient on many leads; this illustrates why classes with a twelve-lead AUPRC below 0.50 are flagged rather than interpreted.",
         "## TRIPOD+AI checklist",
         "Items and numbering follow the TRIPOD+AI statement (Collins et al., BMJ 2024;385:e078378).",
         _md(pd.DataFrame(TRIPOD, columns=["Section", "Item", "Reported in"])),

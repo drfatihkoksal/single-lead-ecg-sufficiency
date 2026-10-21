@@ -1,0 +1,170 @@
+{
+ "axis": {
+  "agreement": [
+   {
+    "cohort": "chapman",
+    "n_test": 1535,
+    "axis_computed": 0.9641693811074918,
+    "n_label": 57,
+    "n_rule": 160,
+    "auroc_axis": 0.928508727929374,
+    "auprc_axis": 0.23683862888744447,
+    "label_given_rule": 0.30625,
+    "rule_given_label": 0.875,
+    "label_given_no_rule": 0.005303030303030303,
+    "kappa_rule_label": 0.4212619300106044
+   },
+   {
+    "cohort": "ningbo",
+    "n_test": 5225,
+    "axis_computed": 0.9665071770334929,
+    "n_label": 175,
+    "n_rule": 619,
+    "auroc_axis": 0.9241212632594021,
+    "auprc_axis": 0.18022814120824848,
+    "label_given_rule": 0.25040387722132473,
+    "rule_given_label": 0.9117647058823529,
+    "label_given_no_rule": 0.003385240352064997,
+    "kappa_rule_label": 0.3590470562985064
+   },
+   {
+    "cohort": "georgia",
+    "n_test": 1544,
+    "axis_computed": 0.9520725388601037,
+    "n_label": 141,
+    "n_rule": 265,
+    "auroc_axis": 0.9213310014002846,
+    "auprc_axis": 0.3550486841118394,
+    "label_given_rule": 0.45660377358490567,
+    "rule_given_label": 0.9097744360902256,
+    "label_given_no_rule": 0.00995850622406639,
+    "kappa_rule_label": 0.5543463474357231
+   },
+   {
+    "cohort": "ptbxl_snomed",
+    "n_test": 2203,
+    "axis_computed": 0.9609623241034952,
+    "n_label": 528,
+    "n_rule": 367,
+    "auroc_axis": 0.8708090239660553,
+    "auprc_axis": 0.568398509521888,
+    "label_given_rule": 0.6158038147138964,
+    "rule_given_label": 0.450199203187251,
+    "label_given_no_rule": 0.15771428571428572,
+    "kappa_rule_label": 0.3999551388147812
+   }
+  ]
+ },
+ "seedboot": [
+  {
+   "arch": "inceptiontime",
+   "kind": "device",
+   "n": 168.0,
+   "same": 156.0,
+   "suff_to_indet": 11.0,
+   "loss_to_indet": 1.0,
+   "indet_to_other": 0.0,
+   "n_sufficient": 80.0,
+   "n_sufficient_2l": 69.0,
+   "median_width": 0.0723,
+   "median_width_2l": 0.09049205421282894
+  },
+  {
+   "arch": "inceptiontime",
+   "kind": "single",
+   "n": 504.0,
+   "same": 490.0,
+   "suff_to_indet": 6.0,
+   "loss_to_indet": 7.0,
+   "indet_to_other": 1.0,
+   "n_sufficient": 137.0,
+   "n_sufficient_2l": 132.0,
+   "median_width": 0.10880000000000001,
+   "median_width_2l": 0.11842230350306561
+  },
+  {
+   "arch": "seresnet",
+   "kind": "device",
+   "n": 168.0,
+   "same": 160.0,
+   "suff_to_indet": 5.0,
+   "loss_to_indet": 3.0,
+   "indet_to_other": 0.0,
+   "n_sufficient": 78.0,
+   "n_sufficient_2l": 73.0,
+   "median_width": 0.07039999999999999,
+   "median_width_2l": 0.0816267899507431
+  },
+  {
+   "arch": "seresnet",
+   "kind": "single",
+   "n": 504.0,
+   "same": 492.0,
+   "suff_to_indet": 5.0,
+   "loss_to_indet": 4.0,
+   "indet_to_other": 3.0,
+   "n_sufficient": 154.0,
+   "n_sufficient_2l": 151.0,
+   "median_width": 0.10339999999999999,
+   "median_width_2l": 0.10857374304709398
+  }
+ ],
+ "reclassification": [
+  {
+   "arch": "inceptiontime",
+   "kind": "device",
+   "n": 294.0,
+   "same": 274.0,
+   "suff_rec_to_indet": 15.0,
+   "loss_rec_to_indet": 2.0,
+   "indet_rec_to_other": 3.0,
+   "n_sufficient_rec": 132.0,
+   "n_sufficient": 120.0,
+   "median_width_rec": 0.07675000000000001,
+   "median_width": 0.09505
+  },
+  {
+   "arch": "inceptiontime",
+   "kind": "single",
+   "n": 504.0,
+   "same": 494.0,
+   "suff_rec_to_indet": 4.0,
+   "loss_rec_to_indet": 5.0,
+   "indet_rec_to_other": 1.0,
+   "n_sufficient_rec": 137.0,
+   "n_sufficient": 134.0,
+   "median_width_rec": 0.10880000000000001,
+   "median_width": 0.11779999999999999
+  },
+  {
+   "arch": "seresnet",
+   "kind": "device",
+   "n": 294.0,
+   "same": 281.0,
+   "suff_rec_to_indet": 10.0,
+   "loss_rec_to_indet": 2.0,
+   "indet_rec_to_other": 1.0,
+   "n_sufficient_rec": 132.0,
+   "n_sufficient": 122.0,
+   "median_width_rec": 0.07300000000000001,
+   "median_width": 0.08365
+  },
+  {
+   "arch": "seresnet",
+   "kind": "single",
+   "n": 504.0,
+   "same": 493.0,
+   "suff_rec_to_indet": 8.0,
+   "loss_rec_to_indet": 3.0,
+   "indet_rec_to_other": 0.0,
+   "n_sufficient_rec": 154.0,
+   "n_sufficient": 146.0,
+   "median_width_rec": 0.10339999999999999,
+   "median_width": 0.10990000000000003
+  }
+ ],
+ "prereg": {
+  "confirmed": 19,
+  "total": 34
+ }
+}

@@ -3,11 +3,11 @@ artifacts_v2/aggregate/ so that every number in them is traceable.
 
 Table 1  cohorts: source, country, recordings, partition
 Table 2  diagnostic classes: SNOMED CT codes and test-set positives per cohort
-Table 3  single-lead sufficiency by class and cohort: best lead (SE-ResNet) with its
-         AUPRC gap and 95% CI, number of sufficient single leads per model, and the
-         reduced lead sets that were sufficient
+Table 3  single-lead sufficiency by class and cohort: best lead (SE-ResNet) with its absolute
+         AUPRC, the twelve-lead AUPRC, the AUPRC gap and 95% CI, number of sufficient single
+         leads per model, and the reduced lead sets that were sufficient
 
-Run:  python -m src.tables_v2      -> submission_cibm/tables.md
+Run:  python -m src.tables_v2      -> submission_bspc/tables.md
 """
 import json
 
@@ -17,7 +17,7 @@ import pandas as pd
 from . import config as C
 
 AGG = C.ART_V2 / "aggregate"
-OUT = C.ROOT / "submission_cibm" / "tables.md"
+OUT = C.SUBMISSION / "tables.md"
 NAMES = {"chapman": "Chapman", "ningbo": "Ningbo", "georgia": "Georgia", "ptbxl_snomed": "PTB-XL"}
 SOURCE = {
     "chapman": ("Shaoxing People's Hospital, China", "PhysioNet/CinC Challenge 2021, v1.0.3", "Record level"),
@@ -32,6 +32,7 @@ CLASS_NAME = {"SR": "Sinus rhythm", "SB": "Sinus bradycardia", "ST": "Sinus tach
               "LVH": "Left ventricular hypertrophy", "TWC": "T-wave change", "STTC": "ST-T change"}
 ORDER = ["SR", "SB", "ST", "AF", "AFL", "SVT", "LAD", "RBBB", "LVH", "TWC", "STTC"]
 DEVICE_LABEL = {"I+II": "I+II", "LIMB6": "limb 6", "CH3": "I, II, V2", "CH4": "I, II, III, V2"}
+LATERAL_LABEL = {"I+V1": "I+V1", "I+V5": "I+V5", "II+V5": "II+V5"}
 
 
 def _num(txt):
@@ -96,20 +97,24 @@ def table3():
             g = s[(s.cohort == ds) & (s.cls == cl)]
             if g.empty:
                 rows.append({"Class": cl, "Cohort": NAMES[ds], "Best single lead (P)": "n/a",
-                             "AUPRC gap [95% CI]": "", "Sufficient single leads (SE-ResNet / InceptionTime)": "",
-                             "Sufficient reduced sets (SE-ResNet)": ""})
+                             "AUPRC, best lead / 12 leads": "", "AUPRC gap [95% CI]": "", "Sufficient single leads (SE-ResNet / InceptionTime)": "",
+                             "Sufficient device sets (SE-ResNet)": "", "Sufficient limb + chest sets (SE-ResNet)": ""})
                 continue
             se = g[g.arch == "seresnet"]
             b = se.loc[se.gap.idxmin()]
             n = {a: int((g[g.arch == a].sufficiency == "sufficient").sum()) for a in ("seresnet", "inceptiontime")}
             dv = d[(d.cohort == ds) & (d.cls == cl) & (d.arch == "seresnet") & (d.sufficiency == "sufficient")]
+            lat = dv[dv.spec.isin(list(LATERAL_LABEL))]
+            dv = dv[dv.spec.isin(list(DEVICE_LABEL))]
             flag = C.flag(ds, cl, b.low_ceiling, b.n_pos_test)
             pb = PBEST.get((ds, cl), {}).get(b.spec)
             rows.append({"Class": cl + flag, "Cohort": NAMES[ds],
                          "Best single lead (P)": b.spec + (f" ({pb:.2f})" if pb is not None else ""),
+                         "AUPRC, best lead / 12 leads": f"{b.auprc:.2f} / {b.auprc_ceiling:.2f}",
                          "AUPRC gap [95% CI]": _num(f"{b.gap:.3f} [{b.gap_ci_lo:.3f}, {b.gap_ci_hi:.3f}]"),
                          "Sufficient single leads (SE-ResNet / InceptionTime)": f"{n['seresnet']} / {n['inceptiontime']}",
-                         "Sufficient reduced sets (SE-ResNet)": "; ".join(DEVICE_LABEL[x] for x in dv.spec) or "none"})
+                         "Sufficient device sets (SE-ResNet)": "; ".join(DEVICE_LABEL[x] for x in dv.spec) or "none",
+                         "Sufficient limb + chest sets (SE-ResNet)": "; ".join(LATERAL_LABEL[x] for x in lat.spec) or "none"})
     return _md(pd.DataFrame(rows))
 
 
@@ -119,7 +124,7 @@ def main():
         table1(),
         "**Table 2.** Diagnostic classes, their SNOMED CT codes and the number of positive recordings in each test set. n/a: not available in the source (Ningbo records every atrial fibrillation and flutter as atrial flutter).",
         table2(),
-        "**Table 3.** Single-lead sufficiency by class and cohort. Best single lead: lead with the smallest AUPRC gap to the twelve-lead model (SE-ResNet seed ensemble); P: proportion of bootstrap resamples in which this lead had the smallest gap. Sufficient: upper 95% confidence bound of the gap below 0.05. † twelve-lead AUPRC below 0.50 or fewer than 30 positive test recordings; ‡ label inconsistent with the signal (Section 3.1); interpret with caution.",
+        "**Table 3.** Single-lead sufficiency by class and cohort. Best single lead: lead with the smallest AUPRC gap to the twelve-lead model (SE-ResNet seed ensemble); P: proportion of bootstrap resamples in which this lead had the smallest gap. AUPRC gap: twelve-lead AUPRC minus that of the lead, with its 95% two-level bootstrap confidence interval (seeds and test recordings resampled). Sufficient: upper 95% confidence bound of the gap below 0.05. Device sets: I+II, the six limb leads (limb 6), I, II, V2 and I, II, III, V2; limb + chest sets: I+V1, I+V5 and II+V5. † twelve-lead AUPRC below 0.50 or fewer than 30 positive test recordings; ‡ label inconsistent with the signal (Section 3.1); interpret with caution.",
         table3(),
     ]
     OUT.parent.mkdir(parents=True, exist_ok=True)

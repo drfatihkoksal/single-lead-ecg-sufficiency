@@ -162,7 +162,7 @@ if __name__ == "__main__":
     if not a.extract_only:
         from .evaluate import main as evaluate
         P = C.ds_paths(a.dataset, "gbm", a.seed)
-        for spec in list(C.LEADS) + ["ALL"]:
+        for spec in list(C.LEADS) + ["ALL"] + C.LATERAL_SPECS:
             if not (P.metrics / f"pred_{spec}.npz").exists():      # resumable
                 train_one(spec, feats, a.dataset, a.seed)
         if not (P.metrics / "blindspot.npz").exists():

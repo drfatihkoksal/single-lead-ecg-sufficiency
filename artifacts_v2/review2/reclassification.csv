@@ -1,0 +1,5 @@
+arch,kind,n,same,suff_rec_to_indet,loss_rec_to_indet,indet_rec_to_other,n_sufficient_rec,n_sufficient,median_width_rec,median_width
+inceptiontime,device,294.0000,274.0000,15.0000,2.0000,3.0000,132.0000,120.0000,0.0768,0.0950
+inceptiontime,single,504.0000,494.0000,4.0000,5.0000,1.0000,137.0000,134.0000,0.1088,0.1178
+seresnet,device,294.0000,281.0000,10.0000,2.0000,1.0000,132.0000,122.0000,0.0730,0.0837
+seresnet,single,504.0000,493.0000,8.0000,3.0000,0.0000,154.0000,146.0000,0.1034,0.1099

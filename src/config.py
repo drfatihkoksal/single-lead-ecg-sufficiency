@@ -15,6 +15,9 @@ MODELS = ART / "models"
 METRICS = ART / "metrics"
 SPLITS = ART / "splits"
 FIGURES = ROOT / "figures"
+# current target journal's submission folder (sources + rendered files); submission_cibm/ is the
+# withdrawn Computers in Biology and Medicine version, kept unchanged
+SUBMISSION = ROOT / "submission_bspc"
 # v2 (resubmission) outputs live apart from the study-1 artifacts, which the
 # noise study loads as frozen models and must never be overwritten
 ART_V2 = ROOT / "artifacts_v2"
@@ -107,7 +110,9 @@ LEAD_SETS = {
     "CH3": ["I", "II", "V2"],                          # Challenge 2021 three-lead
     "CH4": ["I", "II", "III", "V2"],                   # Challenge 2021 four-lead
 }
-DEVICE_SPECS = ["I", "II", "I+II", "LIMB6", "CH3", "CH4"]
+# limb lead + chest lead sets, added for reviewer comment 4 (predictions: PREREGISTRATION_lateral_sets.md)
+LATERAL_SPECS = ["I+V1", "I+V5", "II+V5"]
+DEVICE_SPECS = ["I", "II", "I+II", "LIMB6", "CH3", "CH4"] + LATERAL_SPECS
 
 
 # PTB-XL source

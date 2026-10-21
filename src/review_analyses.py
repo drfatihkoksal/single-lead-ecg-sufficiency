@@ -1,6 +1,7 @@
 """Additional analyses requested in the internal pre-submission review.
 
-From the seed-ensemble test predictions (rebuilt from the per-seed pred_*.npz files):
+From the seed-ensemble test predictions (rebuilt from the per-seed pred_*.npz files), with the
+two-level bootstrap of the primary analysis (seeds and test records resampled):
   paired     paired bootstrap CI of gap(lead a) - gap(lead b) for selected lead pairs and for the
              information-equivalent reduced sets (I+II vs six limb leads; I, II, V2 vs I, II, III, V2)
   best       bootstrap probability that each single lead has the smallest gap, and the optimism of
@@ -29,7 +30,7 @@ import pandas as pd
 from scipy.stats import kendalltau, spearmanr
 
 from . import config as C
-from .aggregate_seeds import _complete_seeds
+from .aggregate_seeds import _complete_seeds, spec_key
 
 OUT = C.ART_V2 / "review"
 AGG = C.ART_V2 / "aggregate"
@@ -37,7 +38,8 @@ COHORTS = ["chapman", "ningbo", "georgia", "ptbxl_snomed"]
 ARCHS = ["seresnet", "inceptiontime", "gbm"]
 LEADS = list(C.LEADS)
 N_BOOT, N_SPLIT = 1000, 200
-PAIRS = [("I", "II"), ("I", "aVF"), ("I+II", "LIMB6"), ("CH3", "CH4")]
+PAIRS = [("I", "II"), ("I", "aVF"), ("I+II", "LIMB6"), ("CH3", "CH4"),
+         ("I+V1", "I+II"), ("I+V5", "I+II"), ("II+V5", "I+II")]   # last three: preregistered P2, P3, P6
 # lead sets named by the diagnostic criteria (not by the results): axis from I, II and aVF;
 # RBBB from the right precordial leads and the terminal S wave in I and V6; LVH voltage criteria
 # (Sokolow-Lyon: V1, V5, V6; Cornell: aVL, V3)
@@ -58,7 +60,8 @@ def ap(y, p):
     return float(np.sum(np.diff(np.r_[0.0, rec]) * prec))
 
 
-def load_ens(ds, arch):
+def load_seeds(ds, arch):
+    """spec -> (seeds, n, K) test predictions, and the labels."""
     seeds, specs = _complete_seeds(ds, arch)
     P, y = {}, None
     for sp in specs:
@@ -67,28 +70,40 @@ def load_ens(ds, arch):
             d = np.load(C.ds_paths(ds, arch, s).metrics / f"pred_{sp}.npz")
             y = d["y"] if y is None else y
             ps.append(d["p"])
-        P[sp] = np.mean(ps, axis=0)
+        P[sp] = np.stack(ps)
     return P, y
+
+
+def load_ens(ds, arch):
+    P, y = load_seeds(ds, arch)
+    return {sp: p.mean(0) for sp, p in P.items()}, y
 
 
 def job(args):
     ds, arch, j = args
-    P, y = load_ens(ds, arch)
+    PS, y = load_seeds(ds, arch)
+    P = {sp: p.mean(0) for sp, p in PS.items()}
+    S = PS["ALL"].shape[0]
     cl = C.CLASSES[j]
     yj = y[:, j]
     if cl in C.UNAVAILABLE.get(ds, []) or yj.sum() == 0:
         return None
     n = len(yj)
-    specs = [sp for sp in LEADS + ["I+II", "LIMB6", "CH3", "CH4"] if sp in P]
+    specs = [sp for sp in LEADS + ["I+II", "LIMB6", "CH3", "CH4"] + C.LATERAL_SPECS if sp in P]
     rng = np.random.default_rng(C.SEED + j)
+    # two-level, as in aggregate_seeds.two_level_bootstrap: shared record resamples, and each model's
+    # seeds redrawn from its own stream, so results do not depend on which configurations are present
+    rec = np.random.default_rng([C.SEED, j])
+    sd = {sp: np.random.default_rng([C.SEED, j, spec_key(sp)]) for sp in ["ALL"] + specs}
     gaps = np.full((N_BOOT, len(specs)), np.nan)
     for b in range(N_BOOT):
-        idx = rng.integers(0, n, n)
+        idx = rec.integers(0, n, n)
+        draws = {sp: g.integers(0, S, S) for sp, g in sd.items()}
         yy = yj[idx]
         if yy.sum() == 0:
             continue
-        c = ap(yy, P["ALL"][idx, j])
-        gaps[b] = [c - ap(yy, P[sp][idx, j]) for sp in specs]
+        c = ap(yy, PS["ALL"][draws["ALL"]][:, idx, j].mean(0))
+        gaps[b] = [c - ap(yy, PS[sp][draws[sp]][:, idx, j].mean(0)) for sp in specs]
     ok = ~np.isnan(gaps).any(1)
     gaps = gaps[ok]
     col = {sp: i for i, sp in enumerate(specs)}

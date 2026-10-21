@@ -9,6 +9,8 @@
 !/run_grid.sh
 !/post_grid.sh
 !/run_broad.sh
+!/run_lateral.sh
+!/PREREGISTRATION_lateral_sets.md
 
 !/src/
 /src/*
@@ -30,12 +32,14 @@
 !/src/tables_v2.py
 !/src/supplement_v2.py
 !/src/review_analyses.py
+!/src/review2_analyses.py
 
 !/artifacts_v2/
 /artifacts_v2/*
 !/artifacts_v2/aggregate/
 !/artifacts_v2/aggregate_broad/
 !/artifacts_v2/review/
+!/artifacts_v2/review2/
 !/artifacts_v2/dedupe/
 /artifacts_v2/dedupe/*
 !/artifacts_v2/dedupe/exclusions.csv

@@ -11,7 +11,7 @@ chapman_broad,seresnet,rhythm,SR,12,0,0,"I,II,III,aVR,aVL,aVF,V1,V2,V3,V4,V5,V6"
 chapman_broad,seresnet,rhythm,ST,12,0,0,"I,II,III,aVR,aVL,aVF,V1,V2,V3,V4,V5,V6",0.991,False,235
 chapman_broad,seresnet,rhythm,SVT,2,0,10,"II,III",0.916,False,105
 georgia_broad,seresnet,axis,LAD,0,10,2,,0.699,False,141
-georgia_broad,seresnet,conduction,RBBB,0,11,1,,0.870,False,143
+georgia_broad,seresnet,conduction,RBBB,0,10,2,,0.870,False,143
 georgia_broad,seresnet,hypertrophy,LVH,0,12,0,,0.694,False,184
 georgia_broad,seresnet,repolarization,STTC,5,2,5,"I,aVR,V4,V5,V6",0.659,False,605
 georgia_broad,seresnet,repolarization,TWC,0,6,6,,0.650,False,410
@@ -39,7 +39,7 @@ ptbxl_snomed_broad,seresnet,repolarization,STTC,0,6,6,,0.399,True,221
 ptbxl_snomed_broad,seresnet,repolarization,TWC,0,9,3,,0.588,False,256
 ptbxl_snomed_broad,seresnet,rhythm,AF,9,1,2,"I,II,aVF,V1,V2,V3,V4,V5,V6",0.893,False,152
 ptbxl_snomed_broad,seresnet,rhythm,AFL,0,1,11,,0.687,False,7
-ptbxl_snomed_broad,seresnet,rhythm,SB,11,0,1,"II,III,aVR,aVL,aVF,V1,V2,V3,V4,V5,V6",0.420,True,64
+ptbxl_snomed_broad,seresnet,rhythm,SB,10,0,2,"II,III,aVL,aVF,V1,V2,V3,V4,V5,V6",0.420,True,64
 ptbxl_snomed_broad,seresnet,rhythm,SR,12,0,0,"I,II,III,aVR,aVL,aVF,V1,V2,V3,V4,V5,V6",0.982,False,1826
 ptbxl_snomed_broad,seresnet,rhythm,ST,7,0,5,"I,II,aVR,V1,V4,V5,V6",0.877,False,82
 ptbxl_snomed_broad,seresnet,rhythm,SVT,0,0,12,,0.395,True,5

@@ -1,0 +1,5 @@
+cohort,n_test,axis_computed,n_label,n_rule,auroc_axis,auprc_axis,label_given_rule,rule_given_label,label_given_no_rule,kappa_rule_label
+chapman,1535,0.9642,57,160,0.9285,0.2368,0.3063,0.8750,0.0053,0.4213
+ningbo,5225,0.9665,175,619,0.9241,0.1802,0.2504,0.9118,0.0034,0.3590
+georgia,1544,0.9521,141,265,0.9213,0.3550,0.4566,0.9098,0.0100,0.5543
+ptbxl_snomed,2203,0.9610,528,367,0.8708,0.5684,0.6158,0.4502,0.1577,0.4000
